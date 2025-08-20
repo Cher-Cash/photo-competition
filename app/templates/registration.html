@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация | Фотоконкурс{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+    <div class="container auth-container">
+        <div class="auth-form-wrapper">
+            <h1 class="auth-title">Регистрация</h1>
+            
+            <form class="auth-form" method="POST" action="/user/registration">
+                <div class="form-group">
+                    <label for="name">Имя</label>
+                    <input type="text" id="name" name="name" required placeholder="Ваше имя">
+                </div>
+
+                <div class="form-group">
+                    <label for="second_name">Фамилия</label>
+                    <input type="text" id="second_name" name="second_name" required placeholder="Ваша фамилия">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required placeholder="example@mail.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="age">Кол-во полных лет</label>
+                    <input type="text" id="age" name="age" required placeholder="18">
+                </div>
+
+                <!-- Новое поле: Роль -->
+                <div class="form-group">
+                    <label for="role">Роль</label>
+                    <select id="role" name="role" required>
+                        <option value="">-- Выберите роль --</option>
+                        <option value="participant">Участник</option>
+                        <option value="judge">Судья</option>
+                        <option value="admin">Администратор</option>
+                    </select>
+                </div>
+
+                <!-- Новое поле: О себе (появляется динамически) -->
+                <div class="form-group" id="about-field" style="display: none;">
+                    <label for="about">О себе</label>
+                    <textarea id="about" name="about" rows="5" maxlength="900"
+                              placeholder="Расскажите немного о себе..."
+                              class="medium-textarea"></textarea>
+                    <div class="char-counter">
+                        <span id="char-count">900</span> символов осталось
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <input type="password" id="password" name="password" required placeholder="Не менее 8 символов">
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password">Подтвердите пароль</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required placeholder="Повторите пароль">
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="agree_terms" name="agree_terms" required>
+                    <label for="agree_terms">Я согласен с <a href="/terms">правилами конкурса</a> и <a href="/privacy">политикой конфиденциальности</a></label>
+                </div>
+
+                <button type="submit" class="btn btn-submit">Зарегистрироваться</button>
+
+                <div class="auth-footer">
+                    Уже есть аккаунт? <a href="/login">Войдите</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const roleSelect = document.getElementById('role');
+    const aboutField = document.getElementById('about-field');
+    const aboutTextarea = document.getElementById('about');
+    const charCount = document.getElementById('char-count');
+    const maxChars = 900;
+
+    // Обработчик изменения роли
+    roleSelect.addEventListener('change', function() {
+        const selectedRole = this.value;
+        if (selectedRole === 'participant' || selectedRole === 'judge') {
+            aboutField.style.display = 'block';
+        } else {
+            aboutField.style.display = 'none';
+            aboutTextarea.value = ''; // Очищаем поле при скрытии
+            charCount.textContent = maxChars;
+        }
+    });
+
+    // Счетчик символов
+    aboutTextarea.addEventListener('input', function() {
+        const currentLength = this.value.length;
+        const remaining = maxChars - currentLength;
+        charCount.textContent = remaining;
+
+        // Меняем цвет при приближении к лимиту
+        if (remaining < 50) {
+            charCount.style.color = '#ff4757';
+        } else if (remaining < 100) {
+            charCount.style.color = '#ffa502';
+        } else {
+            charCount.style.color = '#2ed573';
+        }
+    });
+});
+</script>
+
+<style>
+.medium-textarea {
+    resize: vertical;
+    min-height: 100px;
+    max-height: 200px;
+}
+
+.char-counter {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+    text-align: right;
+}
+
+#char-count {
+    font-weight: bold;
+}
+
+select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    background-color: white;
+}
+
+select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+</style>
+{% endblock %}

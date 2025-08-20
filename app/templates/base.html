@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Фотоконкурс "Лучший кадр"{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <div class="logo">Фотоконкурс</div>
+                <ul class="nav-links">
+                    <li><a href="/" class="{% if active_page == 'home' %}active{% endif %}">Главная</a></li>
+                    <li><a href="/jury" class="{% if active_page == 'jury' %}active{% endif %}">Жюри</a></li>
+                    <li><a href="/rules" class="{% if active_page == 'rules' %}active{% endif %}">Правила</a></li>
+                    <li><a href="/awards" class="{% if active_page == 'awards' %}active{% endif %}">Награды</a></li>
+                </ul>
+                <a href="/auth" class="auth-btn">Вход / Регистрация</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2023 Международный фотоконкурс. Все права защищены.</p>
+        </div>
+    </footer>
+</body>
+</html>

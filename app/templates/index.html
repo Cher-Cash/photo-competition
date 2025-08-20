@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+    <div class="container hero-content">
+        <h1>Международный фотоконкурс 2023</h1>
+        <p>Покажите миру свои лучшие работы и получите признание профессионального жюри</p>
+        <a href="/participate" class="btn">Участвовать</a>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <h2 class="section-title">Лучшие работы прошлого года</h2>
+        <div class="gallery">
+            <div class="gallery-item">
+                <img src="/static/images/winner-2022.jpg" alt="Победитель 2022">
+            </div>
+            <div class="gallery-item">
+                <img src="/static/images/second-2022.jpg" alt="2 место 2022">
+            </div>
+            <div class="gallery-item">
+                <img src="/static/images/third-2022.jpg" alt="3 место 2022">
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -29,7 +29,8 @@ class Users(UserMixin, db.Model):
 
     @staticmethod
     def set_password(password):
-        return generate_password_hash(password, method='pbkdf2:sha256')
+        password_hash = generate_password_hash(password)
+        return password_hash
 
 
 class Artworks(db.Model):

@@ -1,6 +1,6 @@
 from flask import Blueprint, request, redirect, url_for, flash, render_template
-from flask_login import current_user, login_user
-from werkzeug.security import generate_password_hash
+from flask_login import current_user, login_user, logout_user
+import sqlalchemy as sa
 
 from app.extansions import db
 from app.models import Users
@@ -45,18 +45,18 @@ def registration():
         if errors:
             for error in errors:
                 flash(error, 'danger')
-            return redirect(url_for('user_bp.registration'))
+            return redirect(url_for('user.registration'))
 
         # Проверяем, не зарегистрирован ли уже пользователь
         existing_user = Users.query.filter_by(email=email).first()
         if existing_user:
             flash('Пользователь с таким email уже зарегистрирован', 'danger')
-            return redirect(url_for('user_bp.registration'))
+            return redirect(url_for('user.registration'))
 
         try:
             # Хешируем пароль перед сохранением
-            hashed_password = set_password(password)
-            hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+            hashed_password = Users.set_password(password)
+            print(hashed_password)
 
             # Создаем нового пользователя
             new_user = Users(
@@ -73,12 +73,12 @@ def registration():
             db.session.commit()
 
             flash('Регистрация прошла успешно! Теперь вы можете войти.', 'success')
-            return redirect(url_for('user_bp.login'))
+            return redirect(url_for('user.authorization'))
 
         except Exception as e:
             db.session.rollback()
             flash('Произошла ошибка при регистрации. Пожалуйста, попробуйте позже.', 'danger')
-            return redirect(url_for('user_bp.registration'))
+            return redirect(url_for('user.registration'))
 
         # Если GET запрос - просто отображаем форму
     return render_template('registration.html')
@@ -86,17 +86,27 @@ def registration():
 
 @user_bp.route("/authorization", methods=["GET", "POST"])
 def authorization():
-    if request.method == 'POST':
-        # Получаем данные из формы
-        email = request.form.get('email')
-        password = request.form.get('password')
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
 
-
-        # Проверяем, не зарегистрирован ли уже пользователь
-        existing_user = Users.query.filter_by(email=email).first()
-        if existing_user:
-            flash('Пользователь с таким email уже зарегистрирован', 'danger')
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = db.session.scalar(
+            sa.select(Users).where(Users.email == form.email.data))
+        if user is None or not user.check_password(form.password.data):
+            flash('Invalid username or password')
             return redirect(url_for('user_bp.registration'))
+        login_user(user, remember=form.remember_me.data)
+        return redirect(url_for('index'))
+    return render_template('authorization.html', title='Sign In', form=form)
 
-        # Если GET запрос - просто отображаем форму
-    return render_template('authorization.html')
+@user_bp.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
+
+
+
+
+

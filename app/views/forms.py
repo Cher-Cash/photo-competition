@@ -9,3 +9,8 @@ class LoginForm(FlaskForm):
     password = PasswordField("Пароль", validators=[DataRequired()])
     remember_me = BooleanField("Запомнить меня")
     submit = SubmitField("Войти")
+
+
+class ForgotPasswordForm(FlaskForm):
+    email = StringField("Email", validators=[DataRequired(), Email()])
+    submit = SubmitField("Отправить ссылку")

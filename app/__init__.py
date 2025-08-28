@@ -2,7 +2,7 @@ import os
 import typing
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.form.widgets import DateTimePickerWidget
@@ -43,6 +43,9 @@ def create_app(testing=False):  # noqa: FBT002
         return jsonify({"status": "ok"})
 
     from app.views.user import user_bp
+    @new_app.route("/index")
+    def index():
+        return render_template('index.html')
 
     new_app.register_blueprint(user_bp, url_prefix="/user")
     return new_app

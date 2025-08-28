@@ -12,12 +12,25 @@
             <nav>
                 <div class="logo">Фотоконкурс</div>
                 <ul class="nav-links">
-                    <li><a href="/" class="{% if active_page == 'home' %}active{% endif %}">Главная</a></li>
+                    <li><a href="/index" class="{% if active_page == 'home' %}active{% endif %}">Главная</a></li>
                     <li><a href="/jury" class="{% if active_page == 'jury' %}active{% endif %}">Жюри</a></li>
                     <li><a href="/rules" class="{% if active_page == 'rules' %}active{% endif %}">Правила</a></li>
                     <li><a href="/awards" class="{% if active_page == 'awards' %}active{% endif %}">Награды</a></li>
+                    {% if current_user.is_authenticated %}
+                    <li><a href="/profile" class="{% if active_page == 'profile' %}active{% endif %}">Профиль</a></li>
+                    {% if current_user.role in ['admin', 'judge'] %}
+                    <li><a href="/admin" class="{% if active_page == 'admin' %}active{% endif %}">Админка</a></li>
+                    {% endif %}
+                    {% endif %}
                 </ul>
-                <a href="/auth" class="auth-btn">Вход / Регистрация</a>
+                <div class="header-auth">
+                    {% if current_user.is_authenticated %}
+                        <span class="user-greeting">Привет, {{ current_user.name }}!</span>
+                        <a href="/user/logout" class="logout-btn">Выход</a>
+                    {% else %}
+                        <a href="/user/authorization" class="auth-btn">Вход / Регистрация</a>
+                    {% endif %}
+                </div>
             </nav>
         </div>
     </header>

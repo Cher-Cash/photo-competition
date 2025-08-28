@@ -4,14 +4,11 @@ import sqlalchemy as sa
 
 from app.extansions import db
 from app.models import Users
-from app.views.forms import LoginForm
+from app.views.forms import LoginForm, ForgotPasswordForm
 
 user_bp = Blueprint("user", __name__)
 
 
-@user_bp.route('/index')
-def index():
-    return render_template('index.html')
 
 @user_bp.route("/registration", methods=["GET", "POST"])
 def registration():
@@ -92,7 +89,7 @@ def registration():
 @user_bp.route("/authorization", methods=["GET", "POST"])
 def authorization():
     if current_user.is_authenticated:
-        return redirect(url_for('user.index'))
+        return redirect(url_for('index'))
 
     form = LoginForm()
     if form.validate_on_submit():
@@ -105,7 +102,7 @@ def authorization():
             return redirect(url_for('user.authorization'))
         login_user(user, remember=form.remember_me.data)
         print('внутри')
-        return redirect(url_for('user.index'))
+        return redirect(url_for('index'))
     return render_template('authorization.html', title='Sign In', form=form)
 
 @user_bp.route('/logout')
@@ -113,7 +110,18 @@ def logout():
     logout_user()
     return redirect(url_for('user.authorization'))
 
+@user_bp.route("/forgot_password", methods=["GET", "POST"])
+def forgot_password():
+    form = ForgotPasswordForm()
 
+    if form.validate_on_submit():
+        # Здесь должна быть логика отправки email
+        # Например: send_password_reset_email(form.email.data)
+
+        flash('Ссылка для восстановления пароля отправлена на вашу почту', 'success')
+        return render_template('forgot_password.html', form=form, success=True)
+
+    return render_template('forgot_password.html', form=form, success=False)
 
 
 

@@ -1,8 +1,8 @@
 """initial
 
-Revision ID: 9472cc1fb279
+Revision ID: 6747b8f9f2b7
 Revises: 
-Create Date: 2025-08-03 21:41:30.721939
+Create Date: 2025-08-28 20:36:53.902304
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '9472cc1fb279'
+revision = '6747b8f9f2b7'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -36,8 +36,6 @@ def upgrade():
     sa.Column('start_of_accepting', sa.DateTime(), nullable=True),
     sa.Column('end_of_accepting', sa.DateTime(), nullable=True),
     sa.Column('summing_up', sa.DateTime(), nullable=True),
-    sa.Column('nomination_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['nomination_id'], ['nominations.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('nominations',
@@ -57,7 +55,8 @@ def upgrade():
     sa.Column('about_user', sa.String(length=900), nullable=True),
     sa.Column('email', sa.String(length=254), nullable=False),
     sa.Column('password_hash', sa.String(length=256), nullable=False),
-    sa.Column('role', sa.String(length=20), nullable=True),
+    sa.Column('role', sa.String(length=20), nullable=False),
+    sa.Column('status', sa.String(length=20), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('ratings',

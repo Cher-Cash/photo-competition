@@ -34,7 +34,10 @@ def create_app(testing=False):  # noqa: FBT002
         new_app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///mydatabase.db"
 
     new_app.secret_key = os.getenv("SECRET_KEY")
+    new_app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'artworks')
+    new_app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_FILE_SIZE', 10 * 1024 * 1024))
     new_app.config["CORS_HEADERS"] = "Content-Type"
+
     configure_extensions(new_app)
     CORS(new_app, resources={r"/*": {"origins": "*"}})
 
@@ -42,11 +45,14 @@ def create_app(testing=False):  # noqa: FBT002
     def init_route():
         return jsonify({"status": "ok"})
 
-    from app.views.user import user_bp
     @new_app.route("/index")
     def index():
         return render_template('index.html')
 
+    from app.views.user import user_bp
+    from app.views.application import application_bp
+
+    new_app.register_blueprint(application_bp, url_prefix="/")
     new_app.register_blueprint(user_bp, url_prefix="/user")
     return new_app
 
@@ -66,13 +72,13 @@ class ArtworksView(MyModelView):
 
 
 class NominationsView(MyModelView):
-    column_list = ["id", "title", "winner_work_id", "competition_id"]
-    form_columns: typing.ClassVar = ["title", "winner_work_id", "competition_id"]
+    column_list = ["id", "title", "winner_work_id", "competition_id", "status"]
+    form_columns: typing.ClassVar = ["title", "winner_work_id", "competition_id", "status"]
 
 
 class CompetitionsView(MyModelView):
-    column_list = ["id", "title", "status", "start_of_accepting", "end_of_accepting", "summing_up", "nomination_id"]
-    form_columns: typing.ClassVar = ["title", "status", "start_of_accepting", "end_of_accepting", "summing_up", "nomination_id"]
+    column_list = ["id", "title", "status", "start_of_accepting", "end_of_accepting", "summing_up"]
+    form_columns: typing.ClassVar = ["title", "status", "start_of_accepting", "end_of_accepting", "summing_up"]
 
 
 class RatingsView(MyModelView):

@@ -1,5 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -48,6 +49,7 @@ class Nominations(db.Model):
     __tablename__ = "nominations"
     id = Column(Integer, primary_key=True)
     title = Column(String(254))
+    status = Column(String(20))
 
     winner_work_id = Column(Integer, ForeignKey("artworks.id"), nullable=True)
     competition_id = Column(Integer, ForeignKey("competitions.id"), nullable=False)
@@ -62,7 +64,7 @@ class Competitions(db.Model):
     end_of_accepting = Column(DateTime)
     summing_up = Column(DateTime)
 
-    nomination_id = Column(Integer, ForeignKey("nominations.id"), nullable=False)
+    nominations = relationship("Nominations", backref="competition")
 
 
 class Ratings(db.Model):

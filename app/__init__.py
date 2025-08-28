@@ -2,7 +2,7 @@ import os
 import typing
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.form.widgets import DateTimePickerWidget
@@ -17,6 +17,12 @@ from app.models import Users, Artworks, Nominations, Competitions, Ratings
 
 
 
+def configure_extensions(app):
+    db.init_app(app)
+    admin_ext.init_app(app)
+    migrate_ext.init_app(app, db)
+    login_manager.init_app(app=app)
+    login_manager.login_view = "user.authorization"  # type: ignore
 
 def create_app(testing=False):  # noqa: FBT002
     load_dotenv()
@@ -29,9 +35,7 @@ def create_app(testing=False):  # noqa: FBT002
 
     new_app.secret_key = os.getenv("SECRET_KEY")
     new_app.config["CORS_HEADERS"] = "Content-Type"
-    db.init_app(new_app)
-    migrate_ext.init_app(new_app, db)
-    admin_ext.init_app(new_app)
+    configure_extensions(new_app)
     CORS(new_app, resources={r"/*": {"origins": "*"}})
 
     @new_app.route("/ping")
@@ -39,6 +43,9 @@ def create_app(testing=False):  # noqa: FBT002
         return jsonify({"status": "ok"})
 
     from app.views.user import user_bp
+    @new_app.route("/index")
+    def index():
+        return render_template('index.html')
 
     new_app.register_blueprint(user_bp, url_prefix="/user")
     return new_app

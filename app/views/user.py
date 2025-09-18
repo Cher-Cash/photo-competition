@@ -4,63 +4,32 @@ import sqlalchemy as sa
 
 from app.extansions import db
 from app.models import Users
-from app.views.forms import LoginForm, ForgotPasswordForm
+from app.views.forms import LoginForm, ForgotPasswordForm, RegistrationForm
 
 user_bp = Blueprint("user", __name__)
 
 
-
 @user_bp.route("/registration", methods=["GET", "POST"])
 def registration():
-    if request.method == 'POST':
-        # Получаем данные из формы
-        email = request.form.get('email')
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-        f_name = request.form.get('name')
-        s_name = request.form.get('second_name')
-        age = int(request.form.get('age'))
-        role = request.form.get('role')
-        print({"email": email, "password":password, "f_name":f_name, "s_name":s_name, "age":age, "role": role})
+    form = RegistrationForm()
+
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+        f_name = form.name.data
+        s_name = form.second_name.data
+        age = form.age.data
+        role = form.role.data
 
 
-        # Валидация данных
-        errors = []
-
-        # Проверка заполненности полей
-        if not email:
-            errors.append("Email обязателен для заполнения")
-        if not password:
-            errors.append("Пароль обязателен для заполнения")
-        if password != confirm_password:
-            errors.append("Пароли не совпадают")
-
-        # Проверка формата email
-        if email and '@' not in email:
-            errors.append("Некорректный email")
-
-        # Проверка длины пароля
-        if password and len(password) < 8:
-            errors.append("Пароль должен содержать минимум 8 символов")
-
-        # Если есть ошибки - показываем их
-        if errors:
-            for error in errors:
-                flash(error, 'danger')
-            return redirect(url_for('user.registration'))
-
-        # Проверяем, не зарегистрирован ли уже пользователь
         existing_user = Users.query.filter_by(email=email).first()
         if existing_user:
             flash('Пользователь с таким email уже зарегистрирован', 'danger')
             return redirect(url_for('user.registration'))
 
         try:
-            # Хешируем пароль перед сохранением
             hashed_password = Users.set_password(password)
-            print(hashed_password)
 
-            # Создаем нового пользователя
             new_user = Users(
                 email=email,
                 password_hash=hashed_password,
@@ -70,7 +39,6 @@ def registration():
                 role=role
             )
 
-            # Добавляем в базу
             db.session.add(new_user)
             db.session.commit()
 
@@ -82,8 +50,12 @@ def registration():
             flash('Произошла ошибка при регистрации. Пожалуйста, попробуйте позже.', 'danger')
             return redirect(url_for('user.registration'))
 
-        # Если GET запрос - просто отображаем форму
-    return render_template('registration.html')
+    if form.errors:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(error, 'danger')
+
+    return render_template('registration.html', form=form)
 
 
 @user_bp.route("/authorization", methods=["GET", "POST"])
@@ -93,15 +65,12 @@ def authorization():
 
     form = LoginForm()
     if form.validate_on_submit():
-        print(form.email.data, form.password.data)
         user = db.session.scalar(
             sa.select(Users).where(Users.email == form.email.data))
         if user is None or not user.check_password(form.password.data):
             flash('Invalid username or password')
-            print('wrong hole')
             return redirect(url_for('user.authorization'))
         login_user(user, remember=form.remember_me.data)
-        print('внутри')
         return redirect(url_for('index'))
     return render_template('authorization.html', title='Sign In', form=form)
 
@@ -117,6 +86,7 @@ def forgot_password():
     if form.validate_on_submit():
         # Здесь должна быть логика отправки email
         # Например: send_password_reset_email(form.email.data)
+        # отправлять на почту ссылку на вход без пароля - ссылка сразу на лк смену пароля, просто голым текстом, красоту потом можно сделать
 
         flash('Ссылка для восстановления пароля отправлена на вашу почту', 'success')
         return render_template('forgot_password.html', form=form, success=True)

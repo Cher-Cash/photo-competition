@@ -8,44 +8,112 @@
         <div class="auth-form-wrapper">
             <h1 class="auth-title">Регистрация</h1>
             
+            <!-- Блок для отображения общих ошибок формы -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="alert alert-error">
+                    <ul>
+                        {% for category, message in messages %}
+                            {% if category == 'danger' %}
+                                <li>{{ message }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            {% endwith %}
+
+            {% if form and form.errors %}
+            <div class="alert alert-error">
+                <ul>
+                    {% for field, errors in form.errors.items() %}
+                        {% for error in errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
             <form class="auth-form" method="POST" action="/user/registration">
+                {% if form %}{{ form.hidden_tag() }}{% endif %}
+
+                <!-- Поля формы остаются без изменений -->
                 <div class="form-group">
                     <label for="name">Имя</label>
-                    <input type="text" id="name" name="name" required placeholder="Ваше имя">
+                    {% if form %}
+                        {{ form.name(class="form-control", placeholder="Ваше имя") }}
+                        {% if form.name.errors %}
+                            <div class="error-message">{{ form.name.errors[0] }}</div>
+                        {% endif %}
+                    {% else %}
+                        <input type="text" id="name" name="name" class="form-control" placeholder="Ваше имя" required>
+                    {% endif %}
                 </div>
 
                 <div class="form-group">
                     <label for="second_name">Фамилия</label>
-                    <input type="text" id="second_name" name="second_name" required placeholder="Ваша фамилия">
+                    {% if form %}
+                        {{ form.second_name(class="form-control", placeholder="Ваша фамилия") }}
+                        {% if form.second_name.errors %}
+                            <div class="error-message">{{ form.second_name.errors[0] }}</div>
+                        {% endif %}
+                    {% else %}
+                        <input type="text" id="second_name" name="second_name" class="form-control" placeholder="Ваша фамилия" required>
+                    {% endif %}
                 </div>
 
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required placeholder="example@mail.com">
+                    {% if form %}
+                        {{ form.email(class="form-control", placeholder="example@mail.com") }}
+                        {% if form.email.errors %}
+                            <div class="error-message">{{ form.email.errors[0] }}</div>
+                        {% endif %}
+                    {% else %}
+                        <input type="email" id="email" name="email" class="form-control" placeholder="example@mail.com" required>
+                    {% endif %}
                 </div>
 
                 <div class="form-group">
                     <label for="age">Кол-во полных лет</label>
-                    <input type="text" id="age" name="age" required placeholder="18">
+                    {% if form %}
+                        {{ form.age(class="form-control", placeholder="18") }}
+                        {% if form.age.errors %}
+                            <div class="error-message">{{ form.age.errors[0] }}</div>
+                        {% endif %}
+                    {% else %}
+                        <input type="number" id="age" name="age" class="form-control" placeholder="18" required min="1" max="150">
+                    {% endif %}
                 </div>
 
-                <!-- Новое поле: Роль -->
                 <div class="form-group">
                     <label for="role">Роль</label>
-                    <select id="role" name="role" required>
-                        <option value="">-- Выберите роль --</option>
-                        <option value="participant">Участник</option>
-                        <option value="judge">Судья</option>
-                        <option value="admin">Администратор</option>
-                    </select>
+                    {% if form %}
+                        {{ form.role(class="form-control") }}
+                        {% if form.role.errors %}
+                            <div class="error-message">{{ form.role.errors[0] }}</div>
+                        {% endif %}
+                    {% else %}
+                        <select id="role" name="role" class="form-control" required>
+                            <option value="">-- Выберите роль --</option>
+                            <option value="participant">Участник</option>
+                            <option value="judge">Судья</option>
+                            <option value="admin">Администратор</option>
+                        </select>
+                    {% endif %}
                 </div>
 
-                <!-- Новое поле: О себе (появляется динамически) -->
                 <div class="form-group" id="about-field" style="display: none;">
                     <label for="about">О себе</label>
-                    <textarea id="about" name="about" rows="5" maxlength="900"
-                              placeholder="Расскажите немного о себе..."
-                              class="medium-textarea"></textarea>
+                    {% if form %}
+                        {{ form.about(class="form-control medium-textarea", rows="5", placeholder="Расскажите немного о себе...") }}
+                        {% if form.about.errors %}
+                            <div class="error-message">{{ form.about.errors[0] }}</div>
+                        {% endif %}
+                    {% else %}
+                        <textarea id="about" name="about" class="form-control medium-textarea" rows="5" placeholder="Расскажите немного о себе..." maxlength="900"></textarea>
+                    {% endif %}
                     <div class="char-counter">
                         <span id="char-count">900</span> символов осталось
                     </div>
@@ -53,16 +121,54 @@
 
                 <div class="form-group">
                     <label for="password">Пароль</label>
-                    <input type="password" id="password" name="password" required placeholder="Не менее 8 символов">
+                    {% if form %}
+                        {{ form.password(class="form-control", placeholder="Не менее 8 символов",
+                                      **{'data-toggle': 'password-requirements'}) }}
+                        {% if form.password.errors %}
+                            <div class="error-message password-requirements">
+                                {{ form.password.errors[0] }}
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <input type="password" id="password" name="password" class="form-control"
+                               placeholder="Не менее 8 символов" required
+                               data-toggle="password-requirements">
+                    {% endif %}
+
+                    <!-- Блок с требованиями к паролю (всегда видимый) -->
+                    <div class="password-requirements-list">
+                        <small>Пароль должен содержать:</small>
+                        <ul>
+                            <li data-requirement="length">✓ Минимум 8 символов</li>
+                            <li data-requirement="uppercase">✓ Хотя бы одна заглавная буква</li>
+                            <li data-requirement="lowercase">✓ Хотя бы одна строчная буква</li>
+                            <li data-requirement="digit">✓ Хотя бы одна цифра</li>
+                            <li data-requirement="special">✓ Хотя бы один специальный символ (!@#$%^&*(),.?":{}|<>)</li>
+                        </ul>
+                    </div>
                 </div>
 
                 <div class="form-group">
                     <label for="confirm_password">Подтвердите пароль</label>
-                    <input type="password" id="confirm_password" name="confirm_password" required placeholder="Повторите пароль">
+                    {% if form %}
+                        {{ form.confirm_password(class="form-control", placeholder="Повторите пароль") }}
+                        {% if form.confirm_password.errors %}
+                            <div class="error-message">{{ form.confirm_password.errors[0] }}</div>
+                        {% endif %}
+                    {% else %}
+                        <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Повторите пароль" required>
+                    {% endif %}
                 </div>
 
                 <div class="form-group checkbox-group">
-                    <input type="checkbox" id="agree_terms" name="agree_terms" required>
+                    {% if form %}
+                        {{ form.agree_terms() }}
+                        {% if form.agree_terms.errors %}
+                            <div class="error-message">{{ form.agree_terms.errors[0] }}</div>
+                        {% endif %}
+                    {% else %}
+                        <input type="checkbox" id="agree_terms" name="agree_terms" required>
+                    {% endif %}
                     <label for="agree_terms">Я согласен с <a href="/terms">правилами конкурса</a> и <a href="/privacy">политикой конфиденциальности</a></label>
                 </div>
 
@@ -83,34 +189,80 @@ document.addEventListener('DOMContentLoaded', function() {
     const aboutTextarea = document.getElementById('about');
     const charCount = document.getElementById('char-count');
     const maxChars = 900;
+    const passwordInput = document.getElementById('password');
+    const requirementItems = document.querySelectorAll('.password-requirements-list li');
 
     // Обработчик изменения роли
-    roleSelect.addEventListener('change', function() {
-        const selectedRole = this.value;
-        if (selectedRole === 'participant' || selectedRole === 'judge') {
+    if (roleSelect) {
+        roleSelect.addEventListener('change', function() {
+            const selectedRole = this.value;
+            if (selectedRole === 'participant' || selectedRole === 'judge') {
+                aboutField.style.display = 'block';
+            } else {
+                aboutField.style.display = 'none';
+                if (aboutTextarea) aboutTextarea.value = '';
+                if (charCount) charCount.textContent = maxChars;
+            }
+        });
+
+        // Проверить начальное состояние при загрузке
+        if (roleSelect.value === 'participant' || roleSelect.value === 'judge') {
             aboutField.style.display = 'block';
-        } else {
-            aboutField.style.display = 'none';
-            aboutTextarea.value = ''; // Очищаем поле при скрытии
-            charCount.textContent = maxChars;
         }
-    });
+    }
 
     // Счетчик символов
-    aboutTextarea.addEventListener('input', function() {
-        const currentLength = this.value.length;
-        const remaining = maxChars - currentLength;
-        charCount.textContent = remaining;
+    if (aboutTextarea && charCount) {
+        aboutTextarea.addEventListener('input', function() {
+            const currentLength = this.value.length;
+            const remaining = maxChars - currentLength;
+            charCount.textContent = remaining;
 
-        // Меняем цвет при приближении к лимиту
-        if (remaining < 50) {
-            charCount.style.color = '#ff4757';
-        } else if (remaining < 100) {
-            charCount.style.color = '#ffa502';
-        } else {
-            charCount.style.color = '#2ed573';
+            // Меняем цвет при приближении к лимиту
+            if (remaining < 50) {
+                charCount.style.color = '#ff4757';
+            } else if (remaining < 100) {
+                charCount.style.color = '#ffa502';
+            } else {
+                charCount.style.color = '#2ed573';
+            }
+        });
+    }
+
+    // Валидация пароля в реальном времени
+    if (passwordInput && requirementItems.length > 0) {
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+
+            // Проверка длины
+            toggleRequirement('length', password.length >= 8);
+
+            // Проверка заглавных букв
+            toggleRequirement('uppercase', /[A-ZА-Я]/.test(password));
+
+            // Проверка строчных букв
+            toggleRequirement('lowercase', /[a-zа-я]/.test(password));
+
+            // Проверка цифр
+            toggleRequirement('digit', /\d/.test(password));
+
+            // Проверка специальных символов
+            toggleRequirement('special', /[!@#$%^&*(),.?":{}|<>]/.test(password));
+        });
+
+        function toggleRequirement(type, isValid) {
+            const item = document.querySelector(`[data-requirement="${type}"]`);
+            if (item) {
+                if (isValid) {
+                    item.classList.add('valid');
+                    item.classList.remove('invalid');
+                } else {
+                    item.classList.add('invalid');
+                    item.classList.remove('valid');
+                }
+            }
         }
-    });
+    }
 });
 </script>
 
@@ -132,7 +284,7 @@ document.addEventListener('DOMContentLoaded', function() {
     font-weight: bold;
 }
 
-select {
+select.form-control {
     width: 100%;
     padding: 12px;
     border: 1px solid #ddd;
@@ -141,10 +293,98 @@ select {
     background-color: white;
 }
 
-select:focus {
+select.form-control:focus {
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.error-message {
+    color: #ff4757;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+.error-message.password-requirements {
+    background-color: #fff5f5;
+    border: 1px solid #ff4757;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 8px;
+}
+
+.alert-error {
+    background-color: #ffe6e6;
+    border: 1px solid #ff4757;
+    color: #ff4757;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.alert-error ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    margin: 0;
+    width: auto;
+}
+
+.password-requirements-list {
+    margin-top: 8px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+.password-requirements-list small {
+    display: block;
+    margin-bottom: 5px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.password-requirements-list ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.password-requirements-list li {
+    font-size: 12px;
+    margin-bottom: 2px;
+    transition: color 0.2s ease;
+}
+
+.password-requirements-list li.valid {
+    color: #28a745;
+}
+
+.password-requirements-list li.invalid {
+    color: #dc3545;
+}
+
+.password-requirements-list li:before {
+    content: '✓ ';
+    font-weight: bold;
+}
+
+.password-requirements-list li.valid:before {
+    content: '✓ ';
+    color: #28a745;
+}
+
+.password-requirements-list li.invalid:before {
+    content: '✗ ';
+    color: #dc3545;
 }
 </style>
 {% endblock %}

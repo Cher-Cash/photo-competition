@@ -29,9 +29,9 @@ def create_app(testing=False):  # noqa: FBT002
     new_app = Flask(__name__)
 
     if testing:
-        new_app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
+        new_app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_TEST")
     else:
-        new_app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///mydatabase.db"
+        new_app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_REAL")
 
     new_app.secret_key = os.getenv("SECRET_KEY")
     new_app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'artworks')

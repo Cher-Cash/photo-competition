@@ -12,3 +12,5 @@ python-dotenv~=1.1.1
 WTForms~=3.2.1
 alembic~=1.16.4
 email_validator
+flask-mail
+pytz

@@ -1,4 +1,5 @@
-from datetime import datetime
+import pytz
+from datetime import datetime, timedelta
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from flask_login import UserMixin
@@ -24,6 +25,32 @@ class Users(UserMixin, db.Model):
     password_hash = Column(db.String(256), nullable=False)
     role = Column(String(20), nullable=False)
     status = Column(String(20), nullable=True)
+
+    verification_token = db.Column(db.String(100), unique=True)
+    verification_sent_at = db.Column(db.DateTime)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def generate_verification_token(self):
+        """Генерация токена для подтверждения email"""
+        import secrets
+        self.verification_token = secrets.token_urlsafe(32)
+        self.verification_sent_at = datetime.now(pytz.UTC)  # Время с временной зоной
+        self.status = 'pending'
+
+    def is_verification_token_expired(self):
+        """Проверка истечения срока действия токена (60 минут)"""
+        if not self.verification_sent_at:
+            return True
+
+        # Если verification_sent_at без временной зоны, добавляем её
+        if self.verification_sent_at.tzinfo is None:
+            sent_at = self.verification_sent_at.replace(tzinfo=pytz.UTC)
+        else:
+            sent_at = self.verification_sent_at
+
+        expiry_time = sent_at + timedelta(hours=1)
+        return datetime.now(pytz.UTC) > expiry_time
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)

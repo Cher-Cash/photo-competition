@@ -2,6 +2,7 @@ import os
 import typing
 
 from dotenv import load_dotenv
+from flask_mail import Mail
 from flask import Flask, jsonify, render_template
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
@@ -16,6 +17,7 @@ from app.extansions import db, admin_ext, login_manager, migrate_ext
 from app.models import Users, Artworks, Nominations, Competitions, Ratings
 
 
+mail = Mail()
 
 def configure_extensions(app):
     db.init_app(app)
@@ -37,6 +39,16 @@ def create_app(testing=False):  # noqa: FBT002
     new_app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'artworks')
     new_app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_FILE_SIZE', 10 * 1024 * 1024))
     new_app.config["CORS_HEADERS"] = "Content-Type"
+
+    new_app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
+    new_app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
+    new_app.config['MAIL_USE_TLS'] = True
+    new_app.config['MAIL_USE_SSL'] = False
+    new_app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+    new_app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+    new_app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
+
+    mail.init_app(new_app)
 
     configure_extensions(new_app)
     CORS(new_app, resources={r"/*": {"origins": "*"}})
@@ -62,8 +74,8 @@ class MyModelView(ModelView):
 
 
 class UsersView(MyModelView):
-    column_list = ("id", "f_name", "s_name", "age", "about_user", "email", "role")
-    form_columns: typing.ClassVar = ["f_name", "s_name", "age", "about_user", "email", "role"]
+    column_list = ("id", "f_name", "s_name", "age", "about_user", "email", "role", "status")
+    form_columns: typing.ClassVar = ["f_name", "s_name", "age", "about_user", "email", "role", "status"]
 
 
 class ArtworksView(MyModelView):

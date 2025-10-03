@@ -1,8 +1,8 @@
-"""initial
+"""init
 
-Revision ID: 6747b8f9f2b7
+Revision ID: 379f921110ac
 Revises: 
-Create Date: 2025-08-28 20:36:53.902304
+Create Date: 2025-10-03 21:28:59.892853
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '6747b8f9f2b7'
+revision = '379f921110ac'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -41,6 +41,7 @@ def upgrade():
     op.create_table('nominations',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(length=254), nullable=True),
+    sa.Column('status', sa.String(length=20), nullable=True),
     sa.Column('winner_work_id', sa.Integer(), nullable=True),
     sa.Column('competition_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['competition_id'], ['competitions.id'], ),
@@ -57,7 +58,11 @@ def upgrade():
     sa.Column('password_hash', sa.String(length=256), nullable=False),
     sa.Column('role', sa.String(length=20), nullable=False),
     sa.Column('status', sa.String(length=20), nullable=True),
-    sa.PrimaryKeyConstraint('id')
+    sa.Column('verification_token', sa.String(length=100), nullable=True),
+    sa.Column('verification_sent_at', sa.DateTime(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('verification_token')
     )
     op.create_table('ratings',
     sa.Column('id', sa.Integer(), nullable=False),

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Подтверждение Email | Фотоконкурс{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+    <div class="container auth-container">
+        <div class="auth-form-wrapper">
+            <h1 class="auth-title">📧 Подтверждение Email</h1>
+            
+            <div class="alert alert-success">
+                <h3>Регистрация почти завершена!</h3>
+                <p>На адрес <strong>{{ email }}</strong> было отправлено письмо с ссылкой для подтверждения.</p>
+            </div>
+
+            <div class="info-box">
+                <h4>Что делать дальше?</h4>
+                <ol>
+                    <li>Проверьте вашу почту {{ email }}</li>
+                    <li>Найдите письмо от "Фотоконкурс"</li>
+                    <li>Нажмите на кнопку "Подтвердить Email" в письме</li>
+                    <li>После подтверждения вы сможете войти в систему</li>
+                </ol>
+            </div>
+
+            <div class="alert alert-warning">
+                <h4>⏰ Внимание!</h4>
+                <p>Ссылка в письме действительна <strong>60 минут</strong>.</p>
+                <p>Если вы не получили письмо или ссылка истекла:</p>
+                
+                <form method="POST" action="{{ url_for('user.resend_verification') }}" class="resend-form">
+                    <input type="hidden" name="email" value="{{ email }}">
+                    <button type="submit" class="btn btn-warning">
+                        🔄 Отправить письмо повторно
+                    </button>
+                </form>
+            </div>
+
+            <div class="auth-links">
+                <a href="{{ url_for('user.authorization') }}" class="btn btn-secondary">Войти в аккаунт</a>
+                <a href="{{ url_for('user.registration') }}" class="btn btn-outline">Зарегистрироваться</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.info-box {
+    background: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.info-box ol {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.info-box li {
+    margin-bottom: 8px;
+}
+
+.resend-form {
+    margin-top: 15px;
+}
+
+.auth-links {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+</style>
+{% endblock %}

@@ -5,14 +5,11 @@ from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationE
 from flask_wtf.file import FileField, FileAllowed, FileRequired
 
 
-
 class LoginForm(FlaskForm):
     email = StringField("Email", validators=[DataRequired(), Email()])
     password = PasswordField("Пароль", validators=[DataRequired()])
     remember_me = BooleanField("Запомнить меня")
     submit = SubmitField("Войти")
-
-
 
 
 class SubmissionForm(FlaskForm):
@@ -21,7 +18,7 @@ class SubmissionForm(FlaskForm):
         FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Только изображения (jpg, jpeg, png, gif)')
     ])
     nomination_id = SelectField('Номинация',
-        choices=[],  # Будет заполняться динамически
+        choices=[],
         validators=[DataRequired(message='Пожалуйста, выберите номинацию')]
     )
     description = TextAreaField('Название работы', validators=[
@@ -104,6 +101,7 @@ class RegistrationForm(FlaskForm):
 class ForgotPasswordForm(FlaskForm):
     email = StringField("Email", validators=[DataRequired(), Email()])
     submit = SubmitField("Отправить ссылку")
+
 
 class ResetPasswordForm(FlaskForm):
     password = PasswordField('Новый пароль', validators=[

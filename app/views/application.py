@@ -1,15 +1,15 @@
 import os
-import sqlalchemy as sa
-from flask import Blueprint, request, redirect, url_for, flash, render_template, current_app
-from flask_login import current_user, login_user, logout_user
+from flask import Blueprint, redirect, url_for, flash, render_template, current_app
+from flask_login import current_user
 from werkzeug.utils import secure_filename
 
 
 from app.extansions import db
-from app.models import Users, Artworks, Nominations
+from app.models import Artworks, Nominations
 from app.views.forms import SubmissionForm
 
 application_bp = Blueprint("application", __name__)
+
 
 @application_bp.route("/participate", methods=["GET", "POST"])
 def participate():
@@ -57,7 +57,5 @@ def participate():
 
         flash('Ваша заявка успешно отправлена на модерацию!', 'success')
         return redirect(url_for('index'))
-
-
 
     return render_template('participate.html', form=form, nominations=nominations)

@@ -23,7 +23,6 @@ def registration():
         role = form.role.data
         about = form.about.data
 
-
         existing_user = Users.query.filter_by(email=email).first()
         if existing_user:
             flash('Пользователь с таким email уже зарегистрирован', 'danger')
@@ -184,6 +183,7 @@ def authorization():
 
     return render_template('authorization.html', title='Sign In', form=form)
 
+
 @user_bp.route('/logout')
 def logout():
     logout_user()
@@ -254,6 +254,3 @@ def reset_password(token):
 
     # Возвращаем шаблон для GET запроса или невалидной формы
     return render_template('reset_password.html', form=form, token=token)
-
-
-

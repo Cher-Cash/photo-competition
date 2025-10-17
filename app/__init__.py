@@ -4,14 +4,9 @@ import typing
 from dotenv import load_dotenv
 from flask_mail import Mail
 from flask import Flask, jsonify, render_template
-from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
-from flask_admin.form.widgets import DateTimePickerWidget
 from flask_cors import CORS
-from flask_migrate import Migrate
-from flask_wtf import FlaskForm
-from wtforms import DateTimeField, SelectField, StringField
-from wtforms.validators import DataRequired, Optional
+
 
 from app.extansions import db, admin_ext, login_manager, migrate_ext
 from app.models import Users, Artworks, Nominations, Competitions, Ratings
@@ -19,12 +14,14 @@ from app.models import Users, Artworks, Nominations, Competitions, Ratings
 
 mail = Mail()
 
+
 def configure_extensions(app):
     db.init_app(app)
     admin_ext.init_app(app)
     migrate_ext.init_app(app, db)
     login_manager.init_app(app=app)
     login_manager.login_view = "user.authorization"  # type: ignore
+
 
 def create_app(testing=False):  # noqa: FBT002
     load_dotenv()
@@ -96,8 +93,6 @@ class CompetitionsView(MyModelView):
 class RatingsView(MyModelView):
     column_list = ["id", "rate", "work_id", "juri_id"]
     form_columns: typing.ClassVar = ["rate", "work_id", "juri_id"]
-
-
 
 
 admin_ext.add_view(UsersView(Users, db.session))

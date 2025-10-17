@@ -6,3 +6,8 @@ app/__pycache__/
 migrations/versions/__pycache__/
 app/views/__pycache__/
 migrations/__pycache__/
+app/artworks/
+__pycache__
+QWEN.md
+codereview.md
+solving_plan.md

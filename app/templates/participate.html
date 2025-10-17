@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Подача заявки | Фотоконкурс{% endblock %}
+
+{% block content %}
+<section class="submission-section">
+    <div class="container">
+        <div class="submission-wrapper">
+            <h1 class="section-title">Подача заявки на конкурс</h1>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="submission-form-container">
+                <form class="submission-form" method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="form-group file-upload-group">
+                        <label for="photo" class="file-upload-label">
+                            <div class="file-upload-area">
+                                <svg class="upload-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <span class="file-upload-text">Выберите фотографию или перетащите ее сюда</span>
+                                <span class="file-upload-hint">JPG, JPEG, PNG, GIF (макс. 10MB)</span>
+                            </div>
+                            {{ form.photo(class="file-input", id="photo") }}
+                        </label>
+                        <div class="file-preview" id="file-preview"></div>
+                        {% if form.photo.errors %}
+                            <div class="error-feedback">
+                                {% for error in form.photo.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Новое поле: Выбор номинации -->
+                    <div class="form-group">
+                        <label for="nomination_id">Номинация *</label>
+                        {{ form.nomination_id(
+                            class="form-control",
+                            id="nomination_id"
+                        ) }}
+                        {% if form.nomination_id.errors %}
+                            <div class="error-feedback">
+                                {% for error in form.nomination_id.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Описание работы *</label>
+                        {{ form.description(
+                            class="form-control",
+                            id="description",
+                            rows="5",
+                            placeholder="Расскажите о вашей фотографии: идея, техника съемки, история создания...",
+                            maxlength="254"
+                        ) }}
+                        <div class="char-counter">
+                            <span id="char-count">254</span> символов осталось
+                        </div>
+                        {% if form.description.errors %}
+                            <div class="error-feedback">
+                                {% for error in form.description.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-rules">
+                        <h3>Требования к фотографии:</h3>
+                        <ul>
+                            <li>Минимальное разрешение: 1920x1080 пикселей</li>
+                            <li>Максимальный размер файла: 10MB</li>
+                            <li>Допустимые форматы: JPG, JPEG, PNG, GIF</li>
+                            <li>Фотография должна быть авторской работой</li>
+                            <li>Один участник может подать не более 3 работ в каждую номинацию</li>
+                        </ul>
+
+                        <h3>Доступные номинации:</h3>
+                        <div class="nominations-list">
+                            {% for nomination in nominations %}
+                            <div class="nomination-item">
+                                <strong>{{ nomination.name }}</strong>
+                                <p>{{ nomination.description }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-submit">
+                        <span class="btn-text">Отправить заявку</span>
+                        <span class="btn-loading" style="display: none;">Отправка...</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('photo');
+    const filePreview = document.getElementById('file-preview');
+    const descriptionTextarea = document.getElementById('description');
+    const charCount = document.getElementById('char-count');
+    const maxChars = 500;
+    const submitBtn = document.querySelector('.btn-submit');
+    const nominationSelect = document.getElementById('nomination_id');
+
+    // Обработка загрузки файла
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 10 * 1024 * 1024) {
+                alert('Файл слишком большой. Максимальный размер: 10MB');
+                fileInput.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                filePreview.innerHTML = `
+                    <div class="file-preview-item">
+                        <img src="${e.target.result}" alt="Предпросмотр">
+                        <div class="file-info">
+                            <span class="file-name">${file.name}</span>
+                            <span class="file-size">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                        </div>
+                        <button type="button" class="remove-file" onclick="clearFile()">×</button>
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Счетчик символов
+    descriptionTextarea.addEventListener('input', function() {
+        const currentLength = this.value.length;
+        const remaining = maxChars - currentLength;
+        charCount.textContent = remaining;
+
+        if (remaining < 50) {
+            charCount.style.color = '#e74c3c';
+        } else if (remaining < 100) {
+            charCount.style.color = '#f39c12';
+        } else {
+            charCount.style.color = '#27ae60';
+        }
+    });
+
+    // Обработка отправки формы
+    const form = document.querySelector('.submission-form');
+    form.addEventListener('submit', function() {
+        submitBtn.disabled = true;
+        document.querySelector('.btn-text').style.display = 'none';
+        document.querySelector('.btn-loading').style.display = 'inline';
+    });
+});
+
+function clearFile() {
+    document.getElementById('photo').value = '';
+    document.getElementById('file-preview').innerHTML = '';
+}
+</script>
+
+<style>
+/* ... (предыдущие стили остаются) ... */
+
+/* Стили для списка номинаций */
+.nominations-list {
+    margin-top: 1rem;
+}
+
+.nomination-item {
+    background: white;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 6px;
+    border-left: 4px solid #3498db;
+}
+
+.nomination-item strong {
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+.nomination-item p {
+    color: #6c757d;
+    margin: 0.5rem 0 0 0;
+    font-size: 0.9rem;
+}
+
+/* Стили для выпадающего списка */
+.form-control {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1em;
+}
+
+.form-control:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    background: white;
+    transform: translateY(-1px);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .nomination-item {
+        padding: 0.8rem;
+    }
+
+    .nomination-item strong {
+        font-size: 1rem;
+    }
+}
+</style>
+{% endblock %}

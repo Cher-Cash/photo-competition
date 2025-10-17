@@ -4,86 +4,136 @@ import sqlalchemy as sa
 
 from app.extansions import db
 from app.models import Users
-from app.views.forms import LoginForm, ForgotPasswordForm
+from app.views.forms import LoginForm, ForgotPasswordForm, RegistrationForm, ResetPasswordForm
+from app.utils.email import send_password_reset_email, send_verification_email
 
 user_bp = Blueprint("user", __name__)
 
 
-
 @user_bp.route("/registration", methods=["GET", "POST"])
 def registration():
-    if request.method == 'POST':
-        # Получаем данные из формы
-        email = request.form.get('email')
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-        f_name = request.form.get('name')
-        s_name = request.form.get('second_name')
-        age = int(request.form.get('age'))
-        role = request.form.get('role')
-        print({"email": email, "password":password, "f_name":f_name, "s_name":s_name, "age":age, "role": role})
+    form = RegistrationForm()
 
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+        f_name = form.name.data
+        s_name = form.second_name.data
+        age = form.age.data
+        role = form.role.data
+        about = form.about.data
 
-        # Валидация данных
-        errors = []
-
-        # Проверка заполненности полей
-        if not email:
-            errors.append("Email обязателен для заполнения")
-        if not password:
-            errors.append("Пароль обязателен для заполнения")
-        if password != confirm_password:
-            errors.append("Пароли не совпадают")
-
-        # Проверка формата email
-        if email and '@' not in email:
-            errors.append("Некорректный email")
-
-        # Проверка длины пароля
-        if password and len(password) < 8:
-            errors.append("Пароль должен содержать минимум 8 символов")
-
-        # Если есть ошибки - показываем их
-        if errors:
-            for error in errors:
-                flash(error, 'danger')
-            return redirect(url_for('user.registration'))
-
-        # Проверяем, не зарегистрирован ли уже пользователь
         existing_user = Users.query.filter_by(email=email).first()
         if existing_user:
             flash('Пользователь с таким email уже зарегистрирован', 'danger')
             return redirect(url_for('user.registration'))
 
         try:
-            # Хешируем пароль перед сохранением
             hashed_password = Users.set_password(password)
-            print(hashed_password)
 
-            # Создаем нового пользователя
             new_user = Users(
                 email=email,
                 password_hash=hashed_password,
                 f_name=f_name,
                 s_name=s_name,
                 age=age,
-                role=role
+                role=role,
+                about_user=about,
+                status='pending'
             )
-
-            # Добавляем в базу
+            new_user.generate_verification_token()
             db.session.add(new_user)
             db.session.commit()
 
-            flash('Регистрация прошла успешно! Теперь вы можете войти.', 'success')
-            return redirect(url_for('user.authorization'))
+            send_verification_email(email, f_name, new_user.verification_token)
+
+            flash('Регистрация прошла успешно! На вашу почту отправлено письмо с подтверждением.', 'success')
+            return render_template('verification_pending.html', email=email)
 
         except Exception as e:
             db.session.rollback()
             flash('Произошла ошибка при регистрации. Пожалуйста, попробуйте позже.', 'danger')
             return redirect(url_for('user.registration'))
 
-        # Если GET запрос - просто отображаем форму
-    return render_template('registration.html')
+    if form.errors:
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(error, 'danger')
+
+    return render_template('registration.html', form=form)
+
+
+@user_bp.route('/verify-email/<token>')
+def verify_email(token):
+    """Подтверждение email адреса"""
+    try:
+        # Ищем пользователя по токену
+        user = Users.query.filter_by(verification_token=token).first()
+
+        if not user:
+            flash('Неверная ссылка подтверждения', 'danger')
+            return redirect(url_for('user.registration'))
+
+        # Проверяем срок действия токена
+        if user.is_verification_token_expired():
+            # Генерируем новый токен и отправляем новое письмо
+            user.generate_verification_token()
+            db.session.commit()
+
+            send_verification_email(user.email, user.f_name, user.verification_token)
+
+            flash('Ссылка подтверждения истекла. На вашу почту отправлена новая ссылка.', 'warning')
+            return render_template('verification_pending.html', email=user.email)
+
+        # Меняем статус пользователя на "активный"
+        user.status = 'active'
+        user.verification_token = None  # Удаляем использованный токен
+        db.session.commit()
+
+        flash('✅ Ваш email успешно подтвержден! Теперь вы можете войти в систему.', 'success')
+        return redirect(url_for('user.authorization'))
+
+    except Exception as e:
+        db.session.rollback()
+        flash('Произошла ошибка при подтверждении email', 'danger')
+        return redirect(url_for('user.registration'))
+
+
+@user_bp.route('/resend-verification', methods=['POST'])
+def resend_verification():
+    """Повторная отправка письма с подтверждением"""
+    email = request.form.get('email')
+
+    if not email:
+        flash('Email не указан', 'danger')
+        return redirect(url_for('user.registration'))
+
+    user = Users.query.filter_by(email=email).first()
+
+    if not user:
+        flash('Пользователь с таким email не найден', 'danger')
+        return redirect(url_for('user.registration'))
+
+    # Проверяем статус пользователя
+    if user.status == 'active':
+        flash('Email уже подтвержден. Вы можете войти в систему.', 'info')
+        return redirect(url_for('user.authorization'))
+
+    try:
+        # Генерируем новый токен
+        user.generate_verification_token()
+        db.session.commit()
+
+        # Отправляем письмо
+        send_verification_email(user.email, user.f_name, user.verification_token)
+
+        flash('Новое письмо с подтверждением отправлено на ваш email', 'success')
+        return render_template('verification_pending.html', email=user.email)
+
+    except Exception as e:
+        db.session.rollback()
+        flash('Ошибка при отправке письма', 'danger')
+        return redirect(url_for('user.registration'))
 
 
 @user_bp.route("/authorization", methods=["GET", "POST"])
@@ -93,36 +143,114 @@ def authorization():
 
     form = LoginForm()
     if form.validate_on_submit():
-        print(form.email.data, form.password.data)
         user = db.session.scalar(
             sa.select(Users).where(Users.email == form.email.data))
+
         if user is None or not user.check_password(form.password.data):
-            flash('Invalid username or password')
-            print('wrong hole')
+            flash('Неверный email или пароль', 'danger')
             return redirect(url_for('user.authorization'))
-        login_user(user, remember=form.remember_me.data)
-        print('внутри')
-        return redirect(url_for('index'))
+
+        # Проверяем статус пользователя
+        if user.status == 'pending':
+            flash('Подтвердите ваш email адрес для входа в систему. Проверьте вашу почту.', 'warning')
+            return render_template('verification_pending.html', email=user.email)
+
+        elif user.status == 'banned':
+            flash('Ваш аккаунт заблокирован. Обратитесь к администратору.', 'danger')
+            return redirect(url_for('user.authorization'))
+
+        elif user.status == 'inactive':
+            flash('Ваш аккаунт деактивирован. Обратитесь к администратору.', 'warning')
+            return redirect(url_for('user.authorization'))
+
+        elif user.status == 'active':
+            # Успешная авторизация для активного пользователя
+            login_user(user, remember=form.remember_me.data)
+
+            # Опционально: можно добавить логирование входа
+            flash('Вы успешно вошли в систему!', 'success')
+
+            # Редирект на следующую страницу или на индекс
+            next_page = request.args.get('next')
+            if not next_page or not next_page.startswith('/'):
+                next_page = url_for('index')
+            return redirect(next_page)
+
+        else:
+            # Для любых других статусов
+            flash('Аккаунт не активирован. Обратитесь к администратору.', 'warning')
+            return redirect(url_for('user.authorization'))
+
     return render_template('authorization.html', title='Sign In', form=form)
+
 
 @user_bp.route('/logout')
 def logout():
     logout_user()
     return redirect(url_for('user.authorization'))
 
+
 @user_bp.route("/forgot_password", methods=["GET", "POST"])
 def forgot_password():
     form = ForgotPasswordForm()
 
     if form.validate_on_submit():
-        # Здесь должна быть логика отправки email
-        # Например: send_password_reset_email(form.email.data)
+        user = Users.query.filter_by(email=form.email.data).first()
 
-        flash('Ссылка для восстановления пароля отправлена на вашу почту', 'success')
+        if user:
+            # Используем универсальный метод
+            reset_token = user.generate_token('password_reset')
+            db.session.commit()
+
+            send_password_reset_email(user.email, reset_token)
+
+        flash('Если пользователь с таким email существует, ссылка для восстановления пароля будет отправлена',
+              'success')
         return render_template('forgot_password.html', form=form, success=True)
 
     return render_template('forgot_password.html', form=form, success=False)
 
 
+@user_bp.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    """Страница сброса пароля по токену"""
+    # Ищем пользователя по токену
+    user = Users.query.filter_by(reset_password_token=token).first()
 
+    if not user:
+        flash('Неверная или устаревшая ссылка для сброса пароля', 'danger')
+        return redirect(url_for('user.forgot_password'))
 
+    # Проверяем срок действия токена
+    if user.is_token_expired('password_reset', 1):
+        flash('Ссылка для сброса пароля истекла. Запросите новую.', 'danger')
+        return redirect(url_for('user.forgot_password'))
+
+    form = ResetPasswordForm()
+
+    if form.validate_on_submit():
+        try:
+            # Меняем пароль
+            hashed_password = Users.set_password(form.password.data)
+            user.password_hash = hashed_password
+
+            # Очищаем токен
+            user.reset_password_token = None
+            user.reset_password_sent_at = None
+
+            db.session.commit()
+
+            # Авторизуем пользователя
+            login_user(user)
+
+            flash('Пароль успешно изменен! Вы авторизованы в системе.', 'success')
+            return redirect(url_for('index'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash('Ошибка при изменении пароля. Пожалуйста, попробуйте еще раз.', 'danger')
+            # Важно: возвращаем render_template даже при ошибке
+            return render_template('reset_password.html', form=form, token=token)
+
+    # Возвращаем шаблон для GET запроса или невалидной формы
+    return render_template('reset_password.html', form=form, token=token)

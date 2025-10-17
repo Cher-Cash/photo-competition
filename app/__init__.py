@@ -9,7 +9,7 @@ from flask_cors import CORS
 
 
 from app.extansions import db, admin_ext, login_manager, migrate_ext
-from app.models import Users, Artworks, Nominations, Competitions, Ratings
+from app.models import Users, Artworks, Nominations, Competitions, Ratings, Roles
 
 
 mail = Mail()
@@ -71,8 +71,8 @@ class MyModelView(ModelView):
 
 
 class UsersView(MyModelView):
-    column_list = ("id", "f_name", "s_name", "age", "about_user", "email", "role", "status", )
-    form_columns: typing.ClassVar = ["f_name", "s_name", "age", "about_user", "email", "role", "status"]
+    column_list = ("id", "f_name", "s_name", "age", "about_user", "email", "role_id", "status", )
+    form_columns: typing.ClassVar = ["f_name", "s_name", "age", "about_user", "email", "role_id", "status"]
 
 
 class ArtworksView(MyModelView):
@@ -95,8 +95,14 @@ class RatingsView(MyModelView):
     form_columns: typing.ClassVar = ["rate", "work_id", "juri_id"]
 
 
+class RolesView(MyModelView):
+    column_list = ["id", "title", "display_name", "access"]
+    form_columns: typing.ClassVar = ["id", "title", "display_name", "access"]
+
+
 admin_ext.add_view(UsersView(Users, db.session))
 admin_ext.add_view(ArtworksView(Artworks, db.session))
 admin_ext.add_view(NominationsView(Nominations, db.session))
 admin_ext.add_view(CompetitionsView(Competitions, db.session))
 admin_ext.add_view(RatingsView(Ratings, db.session))
+admin_ext.add_view(RolesView(Roles, db.session))

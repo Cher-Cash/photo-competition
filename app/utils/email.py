@@ -78,7 +78,7 @@ def send_password_reset_email(user_email, reset_token):
     """Отправка письма для сброса пароля"""
     subject = "Восстановление пароля - Фотоконкурс"
 
-    reset_link = f"https://yourdomain.com/user/reset-password/{reset_token}"
+    reset_link = f"http://192.168.3.12:5000/user/reset-password/{reset_token}"
 
     text_body = f"""
     Для восстановления пароля перейдите по ссылке:

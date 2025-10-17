@@ -74,7 +74,7 @@ class MyModelView(ModelView):
 
 
 class UsersView(MyModelView):
-    column_list = ("id", "f_name", "s_name", "age", "about_user", "email", "role", "status")
+    column_list = ("id", "f_name", "s_name", "age", "about_user", "email", "role", "status", )
     form_columns: typing.ClassVar = ["f_name", "s_name", "age", "about_user", "email", "role", "status"]
 
 

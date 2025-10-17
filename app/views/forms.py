@@ -13,9 +13,7 @@ class LoginForm(FlaskForm):
     submit = SubmitField("Войти")
 
 
-class ForgotPasswordForm(FlaskForm):
-    email = StringField("Email", validators=[DataRequired(), Email()])
-    submit = SubmitField("Отправить ссылку")
+
 
 class SubmissionForm(FlaskForm):
     photo = FileField('Фотография', validators=[
@@ -101,3 +99,19 @@ class RegistrationForm(FlaskForm):
     agree_terms = BooleanField('Согласие с правилами', validators=[
         DataRequired(message='Необходимо согласие с правилами')
     ])
+
+
+class ForgotPasswordForm(FlaskForm):
+    email = StringField("Email", validators=[DataRequired(), Email()])
+    submit = SubmitField("Отправить ссылку")
+
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField('Новый пароль', validators=[
+        DataRequired(message='Пароль обязателен'),
+        CustomPasswordValidator()
+    ])
+    confirm_password = PasswordField('Подтвердите новый пароль', validators=[
+        DataRequired(message='Подтверждение пароля обязательно'),
+        EqualTo('password', message='Пароли должны совпадать')
+    ])
+    submit = SubmitField('Изменить пароль')

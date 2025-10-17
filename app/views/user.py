@@ -4,7 +4,7 @@ import sqlalchemy as sa
 
 from app.extansions import db
 from app.models import Users
-from app.views.forms import LoginForm, ForgotPasswordForm, RegistrationForm
+from app.views.forms import LoginForm, ForgotPasswordForm, RegistrationForm, ResetPasswordForm
 from app.utils.email import send_password_reset_email, send_verification_email
 
 user_bp = Blueprint("user", __name__)
@@ -189,20 +189,71 @@ def logout():
     logout_user()
     return redirect(url_for('user.authorization'))
 
+
 @user_bp.route("/forgot_password", methods=["GET", "POST"])
 def forgot_password():
     form = ForgotPasswordForm()
 
     if form.validate_on_submit():
-        # Здесь должна быть логика отправки email
-        # Например: send_password_reset_email(form.email.data)
-        # отправлять на почту ссылку на вход без пароля - ссылка сразу на лк смену пароля, просто голым текстом, красоту потом можно сделать
+        user = Users.query.filter_by(email=form.email.data).first()
 
-        flash('Ссылка для восстановления пароля отправлена на вашу почту', 'success')
+        if user:
+            # Используем универсальный метод
+            reset_token = user.generate_token('password_reset')
+            db.session.commit()
+
+            send_password_reset_email(user.email, reset_token)
+
+        flash('Если пользователь с таким email существует, ссылка для восстановления пароля будет отправлена',
+              'success')
         return render_template('forgot_password.html', form=form, success=True)
 
     return render_template('forgot_password.html', form=form, success=False)
 
+
+@user_bp.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    """Страница сброса пароля по токену"""
+    # Ищем пользователя по токену
+    user = Users.query.filter_by(reset_password_token=token).first()
+
+    if not user:
+        flash('Неверная или устаревшая ссылка для сброса пароля', 'danger')
+        return redirect(url_for('user.forgot_password'))
+
+    # Проверяем срок действия токена
+    if user.is_token_expired('password_reset', 1):
+        flash('Ссылка для сброса пароля истекла. Запросите новую.', 'danger')
+        return redirect(url_for('user.forgot_password'))
+
+    form = ResetPasswordForm()
+
+    if form.validate_on_submit():
+        try:
+            # Меняем пароль
+            hashed_password = Users.set_password(form.password.data)
+            user.password_hash = hashed_password
+
+            # Очищаем токен
+            user.reset_password_token = None
+            user.reset_password_sent_at = None
+
+            db.session.commit()
+
+            # Авторизуем пользователя
+            login_user(user)
+
+            flash('Пароль успешно изменен! Вы авторизованы в системе.', 'success')
+            return redirect(url_for('index'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash('Ошибка при изменении пароля. Пожалуйста, попробуйте еще раз.', 'danger')
+            # Важно: возвращаем render_template даже при ошибке
+            return render_template('reset_password.html', form=form, token=token)
+
+    # Возвращаем шаблон для GET запроса или невалидной формы
+    return render_template('reset_password.html', form=form, token=token)
 
 
 

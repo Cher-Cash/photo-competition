@@ -29,28 +29,71 @@ class Users(UserMixin, db.Model):
     verification_token = db.Column(db.String(100), unique=True)
     verification_sent_at = db.Column(db.DateTime)
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    reset_password_token = db.Column(db.String(100), unique=True)
+    reset_password_sent_at = db.Column(db.DateTime)
 
-    def generate_verification_token(self):
-        """Генерация токена для подтверждения email"""
+    created_at = db.Column(db.DateTime, default=datetime.now(pytz.UTC))
+
+    def generate_token(self, token_type='verification', status='pending'):
+        """
+        Универсальный метод генерации токена
+
+        :param token_type: 'verification' или 'password_reset'
+        :param status: статус для установки (только для verification)
+        """
         import secrets
-        self.verification_token = secrets.token_urlsafe(32)
-        self.verification_sent_at = datetime.now(pytz.UTC)  # Время с временной зоной
-        self.status = 'pending'
+        token = secrets.token_urlsafe(32)
+        current_time = datetime.now(pytz.UTC)
 
-    def is_verification_token_expired(self):
-        """Проверка истечения срока действия токена (60 минут)"""
-        if not self.verification_sent_at:
+        if token_type == 'verification':
+            self.verification_token = token
+            self.verification_sent_at = current_time
+            self.status = status
+        elif token_type == 'password_reset':
+            self.reset_password_token = token
+            self.reset_password_sent_at = current_time
+
+        return token
+
+    def is_token_expired(self, token_type='verification', hours=1):
+        """
+        Универсальный метод проверки истечения срока действия токена
+
+        :param token_type: 'verification' или 'password_reset'
+        :param hours: количество часов для проверки
+        """
+        if token_type == 'verification':
+            sent_at = self.verification_sent_at
+        elif token_type == 'password_reset':
+            sent_at = self.reset_password_sent_at
+        else:
             return True
 
-        # Если verification_sent_at без временной зоны, добавляем её
-        if self.verification_sent_at.tzinfo is None:
-            sent_at = self.verification_sent_at.replace(tzinfo=pytz.UTC)
-        else:
-            sent_at = self.verification_sent_at
+        if not sent_at:
+            return True
 
-        expiry_time = sent_at + timedelta(hours=1)
+        # Если время без временной зоны, добавляем её
+        if sent_at.tzinfo is None:
+            sent_at = sent_at.replace(tzinfo=pytz.UTC)
+
+        expiry_time = sent_at + timedelta(hours=hours)
         return datetime.now(pytz.UTC) > expiry_time
+
+    # Старые методы для обратной совместимости
+    def generate_verification_token(self):
+        """Совместимость со старым кодом"""
+        return self.generate_token('verification', 'pending')
+
+    def is_verification_token_expired(self):
+        """Совместимость со старым кодом"""
+        return self.is_token_expired('verification', 1)
+
+    # Новые методы для сброса пароля
+    def generate_password_reset_token(self):
+        return self.generate_token('password_reset')
+
+    def is_password_reset_token_expired(self):
+        return self.is_token_expired('password_reset', 1)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)

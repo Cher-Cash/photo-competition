@@ -88,19 +88,10 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="role">Роль</label>
-                    {% if form %}
-                        {{ form.role(class="form-control") }}
-                        {% if form.role.errors %}
-                            <div class="error-message">{{ form.role.errors[0] }}</div>
-                        {% endif %}
-                    {% else %}
-                        <select id="role" name="role" class="form-control" required>
-                            <option value="">-- Выберите роль --</option>
-                            <option value="participant">Участник</option>
-                            <option value="judge">Судья</option>
-                            <option value="admin">Администратор</option>
-                        </select>
+                    <label for="role_id">Роль</label>
+                    {{ form.role_id(class="form-control") }}
+                    {% if form.role_id.errors %}
+                        <div class="error-message">{{ form.role_id.errors[0] }}</div>
                     {% endif %}
                 </div>
 
@@ -184,7 +175,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const roleSelect = document.getElementById('role');
+    const roleSelect = document.getElementById('role_id'); // Изменил с 'role' на 'role_id'
     const aboutField = document.getElementById('about-field');
     const aboutTextarea = document.getElementById('about');
     const charCount = document.getElementById('char-count');
@@ -195,8 +186,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Обработчик изменения роли
     if (roleSelect) {
         roleSelect.addEventListener('change', function() {
-            const selectedRole = this.value;
-            if (selectedRole === 'participant' || selectedRole === 'judge') {
+            // Получаем выбранный option и его текст
+            const selectedOption = this.options[this.selectedIndex];
+            const roleName = selectedOption.text.toLowerCase();
+
+            // Показываем поле "О себе" для участника и члена жюри
+            if (roleName.includes('участник') || roleName.includes('жюри')) {
                 aboutField.style.display = 'block';
             } else {
                 aboutField.style.display = 'none';
@@ -206,7 +201,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Проверить начальное состояние при загрузке
-        if (roleSelect.value === 'participant' || roleSelect.value === 'judge') {
+        const initialOption = roleSelect.options[roleSelect.selectedIndex];
+        const initialRoleName = initialOption ? initialOption.text.toLowerCase() : '';
+        if (initialRoleName.includes('участник') || initialRoleName.includes('жюри')) {
             aboutField.style.display = 'block';
         }
     }
@@ -227,6 +224,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 charCount.style.color = '#2ed573';
             }
         });
+
+        // Инициализация счетчика при загрузке
+        const currentLength = aboutTextarea.value.length;
+        const remaining = maxChars - currentLength;
+        charCount.textContent = remaining;
     }
 
     // Валидация пароля в реальном времени
@@ -267,6 +269,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
+/* Стили остаются без изменений */
 .medium-textarea {
     resize: vertical;
     min-height: 100px;

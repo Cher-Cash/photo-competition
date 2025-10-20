@@ -4,6 +4,8 @@ from wtforms import PasswordField, StringField, SubmitField, BooleanField, TextA
 from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, NumberRange
 from flask_wtf.file import FileField, FileAllowed, FileRequired
 
+from app.models import Roles
+
 
 class LoginForm(FlaskForm):
     email = StringField("Email", validators=[DataRequired(), Email()])
@@ -76,12 +78,7 @@ class RegistrationForm(FlaskForm):
         DataRequired(message='Возраст обязателен'),
         NumberRange(min=1, max=150, message='Введите корректный возраст (1-150 лет)')
     ])
-    role = SelectField('Роль', choices=[
-        ('', '-- Выберите роль --'),
-        ('participant', 'Участник'),
-        ('judge', 'Судья'),
-        ('admin', 'Администратор')
-    ], validators=[DataRequired(message='Выберите роль')])
+    role_id = SelectField('Роль', coerce=int, validators=[DataRequired(message='Выберите роль')])
     about = TextAreaField('О себе', validators=[
         Length(max=900, message='Описание не должно превышать 900 символов')
     ])
@@ -96,6 +93,13 @@ class RegistrationForm(FlaskForm):
     agree_terms = BooleanField('Согласие с правилами', validators=[
         DataRequired(message='Необходимо согласие с правилами')
     ])
+
+    def __init__(self, *args, **kwargs):
+        super(RegistrationForm, self).__init__(*args, **kwargs)
+        # Динамически устанавливаем choices для ролей
+        available_roles = Roles.query.filter_by(access=True).all()
+        # Используем display_name для отображения
+        self.role_id.choices = [(role.id, role.display_name) for role in available_roles]
 
 
 class ForgotPasswordForm(FlaskForm):

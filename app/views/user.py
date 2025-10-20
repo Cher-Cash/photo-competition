@@ -3,7 +3,7 @@ from flask_login import current_user, login_user, logout_user
 import sqlalchemy as sa
 
 from app.extansions import db
-from app.models import Users
+from app.models import Users, Roles
 from app.views.forms import LoginForm, ForgotPasswordForm, RegistrationForm, ResetPasswordForm
 from app.utils.email import send_password_reset_email, send_verification_email
 
@@ -20,7 +20,7 @@ def registration():
         f_name = form.name.data
         s_name = form.second_name.data
         age = form.age.data
-        role = form.role.data
+        role_id = form.role_id.data
         about = form.about.data
 
         existing_user = Users.query.filter_by(email=email).first()
@@ -37,7 +37,7 @@ def registration():
                 f_name=f_name,
                 s_name=s_name,
                 age=age,
-                role=role,
+                role_id=role_id,
                 about_user=about,
                 status='pending'
             )

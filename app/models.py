@@ -1,6 +1,6 @@
 import pytz
 from datetime import datetime, timedelta
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Boolean
 from sqlalchemy.orm import relationship
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -14,6 +14,14 @@ def load_user(id):
     return db.session.get(Users, int(id))
 
 
+class Roles(db.Model):
+    __tablename__ = "roles"
+    id = Column(Integer, primary_key=True)
+    title = Column(String(20), nullable=False)
+    display_name = Column(String(50), nullable=False)
+    access = Column(Boolean, default=False, nullable=False)
+
+
 class Users(UserMixin, db.Model):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
@@ -23,8 +31,8 @@ class Users(UserMixin, db.Model):
     about_user = Column(String(900))
     email = Column(String(254), nullable=False)
     password_hash = Column(db.String(256), nullable=False)
-    role = Column(String(20), nullable=False)
     status = Column(String(20), nullable=True)
+    role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
 
     verification_token = db.Column(db.String(100), unique=True)
     verification_sent_at = db.Column(db.DateTime)

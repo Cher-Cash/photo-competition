@@ -145,6 +145,82 @@ nav {
     box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
 }
 
+/* Flash Messages Styles */
+.flash-messages {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1000;
+    max-width: 400px;
+}
+
+.flash-message {
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-weight: 500;
+    animation: slideIn 0.3s ease-out;
+    position: relative;
+}
+
+.flash-success {
+    color: #0f5132;
+    background-color: #d1e7dd;
+    border-color: #badbcc;
+}
+
+.flash-error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.flash-warning {
+    color: #856404;
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+}
+
+.flash-info {
+    color: #055160;
+    background-color: #cff4fc;
+    border-color: #b6effb;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.flash-close {
+    float: right;
+    margin-left: 15px;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    opacity: 0.7;
+    line-height: 1;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flash-close:hover {
+    opacity: 1;
+}
+
 /* Main Content */
 main {
     flex: 1;
@@ -453,6 +529,19 @@ footer p {
         padding: 0.7rem 1.5rem;
         font-size: 0.9rem;
     }
+
+    /* Flash messages responsive */
+    .flash-messages {
+        top: 70px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+
+    .flash-message {
+        padding: 12px 15px;
+        font-size: 0.9rem;
+    }
 }
 
 @media (max-width: 480px) {
@@ -479,6 +568,22 @@ footer p {
     .form-group select,
     .form-group textarea {
         padding: 0.8rem;
+    }
+
+    /* Flash messages mobile */
+    .flash-messages {
+        top: 60px;
+    }
+
+    .flash-message {
+        padding: 10px 12px;
+        font-size: 0.85rem;
+    }
+
+    .flash-close {
+        font-size: 16px;
+        width: 18px;
+        height: 18px;
     }
 }
 

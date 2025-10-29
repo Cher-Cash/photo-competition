@@ -35,6 +35,20 @@
         </div>
     </header>
 
+    <!-- Блок для flash-сообщений -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
     <main>
         {% block content %}{% endblock %}
     </main>
@@ -44,5 +58,38 @@
             <p>&copy; 2023 Международный фотоконкурс. Все права защищены.</p>
         </div>
     </footer>
+
+    <script>
+        // Автоматическое скрытие flash-сообщений через 5 секунд
+        document.addEventListener('DOMContentLoaded', function() {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(function(message) {
+                setTimeout(function() {
+                    message.style.transition = 'opacity 0.5s ease';
+                    message.style.opacity = '0';
+                    setTimeout(function() {
+                        if (message.parentElement) {
+                            message.parentElement.remove();
+                        }
+                    }, 500);
+                }, 5000);
+            });
+
+            // Закрытие по клику на кнопку
+            const closeButtons = document.querySelectorAll('.flash-close');
+            closeButtons.forEach(function(button) {
+                button.addEventListener('click', function() {
+                    const message = this.parentElement;
+                    message.style.transition = 'opacity 0.3s ease';
+                    message.style.opacity = '0';
+                    setTimeout(function() {
+                        if (message.parentElement) {
+                            message.parentElement.remove();
+                        }
+                    }, 300);
+                });
+            });
+        });
+    </script>
 </body>
 </html>

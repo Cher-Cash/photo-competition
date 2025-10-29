@@ -1,5 +1,5 @@
 import os
-from flask import Blueprint, redirect, url_for, flash, render_template, current_app
+from flask import Blueprint, redirect, url_for, flash, render_template, current_app, abort
 from flask_login import current_user
 from werkzeug.utils import secure_filename
 
@@ -15,8 +15,7 @@ application_bp = Blueprint("application", __name__)
 def participate():
     current_user_role = Roles.query.filter_by(id=current_user.role_id).first()
     if current_user_role.title != 'participant':
-        flash('Только участники могут подавать заявки', 'error')
-        return redirect(url_for('index'))
+        abort(403)
 
     form = SubmissionForm()
 

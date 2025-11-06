@@ -1,0 +1,407 @@
+{% extends "base.html" %}
+
+{% block title %}Голосование жюри - Фотоконкурс "Лучший кадр"{% endblock %}
+
+{% block content %}
+<div class="voting-container">
+    <div class="container">
+        <h1 class="section-title">Голосование жюри</h1>
+        
+        <div class="voting-stats">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">{{ total_artworks }}</div>
+                    <div class="stat-label">Всего работ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ rated_artworks }}</div>
+                    <div class="stat-label">Оценено работ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ remaining_artworks }}</div>
+                    <div class="stat-label">Осталось оценить</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ progress_percentage }}%</div>
+                    <div class="stat-label">Прогресс</div>
+                </div>
+            </div>
+        </div>
+
+        {% if artworks %}
+        <div class="artworks-grid">
+            {% for artwork in artworks %}
+            <div class="artwork-card" id="artwork-{{ artwork.id }}">
+                <div class="artwork-image">
+                    <img src="{{ url_for('static', filename='artworks/' + artwork.file) }}" 
+                         alt="{{ artwork.file_name }}" 
+                         loading="lazy"
+                         onerror="this.src='/static/images/placeholder.jpg'">
+                </div>
+                
+                <div class="artwork-info">
+                    <h3 class="artwork-title">{{ artwork.file_name }}</h3>
+                    <div class="artwork-meta">
+                        <span class="meta-item">
+                            <strong>Автор:</strong> {{ artwork.author.f_name }} {{ artwork.author.s_name }}
+                        </span>
+                        <span class="meta-item">
+                            <strong>Номинация:</strong> {{ artwork.nomination.title if artwork.nomination else 'Не указана' }}
+                        </span>
+                        <span class="meta-item">
+                            <strong>Статус:</strong>
+                            <span class="status-{{ artwork.status }}">{{ artwork.status }}</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="rating-section">
+                    <div class="current-rating">
+                        {% if artwork.user_rating %}
+                        <div class="user-rating-display">
+                            <span class="rating-label">Ваша оценка:</span>
+                            <span class="rating-value">{{ artwork.user_rating.rate }}/10</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="rating-buttons">
+                        <p class="rating-instruction">Выберите оценку:</p>
+                        <div class="rating-scale">
+                            {% for i in range(1, 11) %}
+                            <button class="rating-btn {% if artwork.user_rating and artwork.user_rating.rate == i %}active{% endif %}"
+                                    data-artwork-id="{{ artwork.id }}"
+                                    data-rating="{{ i }}"
+                                    onclick="rateArtwork({{ artwork.id }}, {{ i }})">
+                                {{ i }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="rating-feedback" id="feedback-{{ artwork.id }}"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-artworks">
+            <div class="no-artworks-icon">📷</div>
+            <h2>Работы для оценки отсутствуют</h2>
+            <p>В данный момент нет работ, требующих вашей оценки.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.voting-container {
+    padding: 2rem 0;
+}
+
+.voting-stats {
+    margin-bottom: 3rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e1e5e9;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #3498db;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.artworks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2rem;
+}
+
+.artwork-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #e1e5e9;
+}
+
+.artwork-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.artwork-image {
+    width: 100%;
+    height: 250px;
+    overflow: hidden;
+    background: #f8f9fa;
+}
+
+.artwork-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.artwork-card:hover .artwork-image img {
+    transform: scale(1.05);
+}
+
+.artwork-info {
+    padding: 1.5rem;
+}
+
+.artwork-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    word-break: break-word;
+}
+
+.artwork-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.meta-item {
+    font-size: 0.9rem;
+    color: #5a6c7d;
+}
+
+.meta-item strong {
+    color: #2c3e50;
+}
+
+.status-approved {
+    color: #27ae60;
+    font-weight: 500;
+}
+
+.status-pending {
+    color: #f39c12;
+    font-weight: 500;
+}
+
+.status-rejected {
+    color: #e74c3c;
+    font-weight: 500;
+}
+
+.rating-section {
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-top: 1px solid #e1e5e9;
+}
+
+.current-rating {
+    margin-bottom: 1rem;
+}
+
+.user-rating-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    border: 2px solid #3498db;
+}
+
+.rating-label {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.rating-value {
+    font-weight: bold;
+    color: #3498db;
+    font-size: 1.1rem;
+}
+
+.rating-instruction {
+    margin-bottom: 1rem;
+    font-weight: 500;
+    color: #2c3e50;
+    text-align: center;
+}
+
+.rating-scale {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+}
+
+.rating-btn {
+    padding: 0.8rem;
+    border: 2px solid #e1e5e9;
+    background: white;
+    border-radius: 8px;
+    font-weight: 600;
+    color: #5a6c7d;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.rating-btn:hover {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+    transform: translateY(-2px);
+}
+
+.rating-btn.active {
+    background: #3498db;
+    color: white;
+    border-color: #3498db;
+}
+
+.rating-feedback {
+    margin-top: 1rem;
+    text-align: center;
+    min-height: 20px;
+}
+
+.no-artworks {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.no-artworks-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+}
+
+.no-artworks h2 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+.no-artworks p {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .artworks-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .rating-scale {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .rating-scale {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.3rem;
+    }
+
+    .rating-btn {
+        padding: 0.6rem;
+        font-size: 0.8rem;
+    }
+
+    .stat-card {
+        padding: 1rem;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+    }
+}
+</style>
+
+<script>
+async function rateArtwork(artworkId, rating) {
+    const feedbackElement = document.getElementById(`feedback-${artworkId}`);
+    const ratingButtons = document.querySelectorAll(`.rating-btn[data-artwork-id="${artworkId}"]`);
+
+    try {
+        // Показываем индикатор загрузки
+        feedbackElement.innerHTML = '<div style="color: #3498db;">Сохраняем оценку...</div>';
+
+        // Отправляем запрос на сервер
+        const response = await fetch('/jury/rate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                artwork_id: artworkId,
+                rating: rating
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Обновляем UI
+            ratingButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (parseInt(btn.dataset.rating) === rating) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Обновляем блок с текущей оценкой
+            const currentRatingDiv = document.querySelector(`#artwork-${artworkId} .current-rating`);
+            currentRatingDiv.innerHTML = `
+                <div class="user-rating-display">
+                    <span class="rating-label">Ваша оценка:</span>
+                    <span class="rating-value">${rating}/10</span>
+                </div>
+            `;
+
+            feedbackElement.innerHTML = '<div style="color: #27ae60;">' + result.message + '</div>';
+
+        } else {
+            feedbackElement.innerHTML = `<div style="color: #e74c3c;">Ошибка: ${result.message}</div>`;
+        }
+
+    } catch (error) {
+        console.error('Ошибка:', error);
+        feedbackElement.innerHTML = '<div style="color: #e74c3c;">Ошибка соединения</div>';
+    }
+
+    // Скрываем сообщение через 3 секунды
+    setTimeout(() => {
+        feedbackElement.innerHTML = '';
+    }, 3000);
+}
+</script>
+{% endblock %}

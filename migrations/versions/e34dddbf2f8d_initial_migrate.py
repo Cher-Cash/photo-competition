@@ -1,8 +1,8 @@
-"""empty message
+"""initial migrate
 
-Revision ID: 4db466d4893c
+Revision ID: e34dddbf2f8d
 Revises: 
-Create Date: 2025-10-17 22:09:20.159597
+Create Date: 2025-11-06 19:58:37.804657
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '4db466d4893c'
+revision = 'e34dddbf2f8d'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -49,34 +49,12 @@ def upgrade():
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('roles',
-                    sa.Column('id', sa.Integer(), nullable=False),
-                    sa.Column('title', sa.String(20), nullable=False),
-                    sa.Column('display_name', sa.String(50), nullable=False),
-                    sa.Column('access', sa.Boolean(), nullable=False, default=False),
-                    sa.PrimaryKeyConstraint('id')
-                    )
-
-    # Создаем временную таблицу для проверки существующих данных
-    connection = op.get_bind()
-
-    # Проверяем, есть ли уже данные в таблице roles
-    result = connection.execute(sa.text("SELECT EXISTS (SELECT 1 FROM roles)")).scalar()
-
-    if not result:
-        # Заполняем ролями с русскими названиями
-        op.bulk_insert(
-            sa.table('roles',
-                     sa.Column('id', sa.Integer),
-                     sa.Column('title', sa.String),
-                     sa.Column('display_name', sa.String),
-                     sa.Column('access', sa.Boolean)
-                     ),
-            [
-                {'id': 1, 'title': 'participant', 'display_name': 'Участник', 'access': True},
-                {'id': 2, 'title': 'jury_candidate', 'display_name': 'Член жюри', 'access': True},
-                {'id': 3, 'title': 'jury', 'display_name': 'Подтвержденный член жюри', 'access': False},
-            ]
-        )
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('title', sa.String(length=20), nullable=False),
+    sa.Column('display_name', sa.String(length=50), nullable=False),
+    sa.Column('access', sa.Boolean(), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('f_name', sa.String(length=20), nullable=False),

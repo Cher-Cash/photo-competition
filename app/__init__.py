@@ -56,7 +56,8 @@ def create_app(testing=False):  # noqa: FBT002
 
     @new_app.route("/index")
     def index():
-        return render_template('index.html')
+        competitions = Competitions.query.filter_by(status="active").all()
+        return render_template('index.html', competitions=competitions)
 
     from app.views.user import user_bp
     from app.views.application import application_bp

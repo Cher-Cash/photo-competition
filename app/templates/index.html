@@ -1,28 +1,293 @@
 {% extends "base.html" %}
 
-{% block content %}
-<section class="hero">
-    <div class="container hero-content">
-        <h1>Международный фотоконкурс 2023</h1>
-        <p>Покажите миру свои лучшие работы и получите признание профессионального жюри</p>
-        <a href="/participate" class="btn">Участвовать</a>
-    </div>
-</section>
+{% block title %}Главная | Фотоконкурс{% endblock %}
 
-<section>
+{% block content %}
+<section class="hero-section">
     <div class="container">
-        <h2 class="section-title">Лучшие работы прошлого года</h2>
-        <div class="gallery">
-            <div class="gallery-item">
-                <img src="/static/images/winner-2022.jpg" alt="Победитель 2022">
-            </div>
-            <div class="gallery-item">
-                <img src="/static/images/second-2022.jpg" alt="2 место 2022">
-            </div>
-            <div class="gallery-item">
-                <img src="/static/images/third-2022.jpg" alt="3 место 2022">
-            </div>
+        <div class="hero-content">
+            <h1 class="hero-title">Фотоконкурсы</h1>
+            <p class="hero-subtitle">Участвуйте в фотоконкурсах и покажите свой талант</p>
         </div>
     </div>
 </section>
+
+<section class="competitions-section">
+    <div class="container">
+        <h2 class="section-title">Активные конкурсы</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if competitions %}
+        <div class="competitions-grid">
+            {% for competition in competitions %}
+            <div class="competition-card">
+                <div class="competition-header">
+                    <h3 class="competition-title">{{ competition.title }}</h3>
+                    <span class="competition-status status-{{ competition.status }}">
+                        {{ 'Активен' if competition.status == 'active' else competition.status }}
+                    </span>
+                </div>
+
+                <div class="competition-dates">
+                    <div class="date-item">
+                        <span class="date-label">Прием работ:</span>
+                        <span class="date-value">
+                            {{ competition.start_of_accepting.strftime('%d.%m.%Y') }} -
+                            {{ competition.end_of_accepting.strftime('%d.%m.%Y') }}
+                        </span>
+                    </div>
+                    <div class="date-item">
+                        <span class="date-label">Подведение итогов:</span>
+                        <span class="date-value">
+                            {{ competition.summing_up.strftime('%d.%m.%Y') }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="competition-nominations">
+                    <strong>Номинации:</strong>
+                    <ul>
+                        {% for nomination in competition.nominations %}
+                            {% if nomination.status == 'active' %}
+                            <li>{{ nomination.title }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="competition-actions">
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.role_id == 1 %}
+                            <a href="{{ url_for('application.participate', competition_id=competition.id) }}"
+                               class="btn btn-primary">
+                                Подать заявку
+                            </a>
+                        {% else %}
+                            <button class="btn btn-secondary" disabled>
+                                Только для участников
+                            </button>
+                        {% endif %}
+                    {% else %}
+                        <a href="{{ url_for('user.authorization') }}" class="btn btn-primary">
+                            Войти для участия
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-competitions">
+            <div class="no-competitions-icon">📷</div>
+            <h3>Нет активных конкурсов</h3>
+            <p>В настоящее время нет конкурсов, принимающих заявки. Следите за обновлениями!</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
 {% endblock %}
+
+<style>
+.hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 80px 0;
+    text-align: center;
+}
+
+.hero-title {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+.hero-subtitle {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.competitions-section {
+    padding: 60px 0;
+}
+
+.section-title {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 3rem;
+    color: #2c3e50;
+}
+
+.competitions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.competition-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e1e5e9;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.competition-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.competition-header {
+    display: flex;
+    justify-content: between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.competition-title {
+    font-size: 1.5rem;
+    color: #2c3e50;
+    margin: 0;
+    flex: 1;
+}
+
+.competition-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-upcoming {
+    background: #cce7ff;
+    color: #004085;
+}
+
+.status-finished {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.competition-dates {
+    margin-bottom: 1.5rem;
+}
+
+.date-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.date-label {
+    font-weight: 600;
+    color: #6c757d;
+}
+
+.date-value {
+    color: #2c3e50;
+}
+
+.competition-nominations {
+    margin-bottom: 2rem;
+}
+
+.competition-nominations strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+}
+
+.competition-nominations ul {
+    margin: 0;
+    padding-left: 1.2rem;
+    color: #6c757d;
+}
+
+.competition-nominations li {
+    margin-bottom: 0.25rem;
+}
+
+.competition-actions {
+    text-align: center;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+    cursor: not-allowed;
+}
+
+.no-competitions {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6c757d;
+}
+
+.no-competitions-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.no-competitions h3 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2rem;
+    }
+
+    .competitions-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .competition-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .date-item {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+}
+</style>

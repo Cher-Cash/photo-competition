@@ -1,5 +1,5 @@
 import os
-from flask import Blueprint, redirect, url_for, flash, render_template, current_app, abort
+from flask import Blueprint, redirect, url_for, flash, render_template, current_app, abort, request, jsonify
 from flask_login import current_user
 from werkzeug.utils import secure_filename
 from sqlalchemy.orm import joinedload
@@ -95,7 +95,7 @@ def jury_voting():
                            progress_percentage=progress_percentage)
 
 
-@application_bp.route("/rate", methods=["GET", "POST"])
+@application_bp.route("/jury/rate", methods=["GET", "POST"])
 def rate_artwork():
     current_user_role = Roles.query.filter_by(id=current_user.role_id).first()
     if current_user_role.title != 'jury':

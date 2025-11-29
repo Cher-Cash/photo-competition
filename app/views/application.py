@@ -71,7 +71,7 @@ def jury_voting():
     artworks = Artworks.query.options(
         joinedload(Artworks.author),
         joinedload(Artworks.nomination)
-    ).all()
+    ).filter_by(status="active").all()
 
     # Получаем оценки текущего жюри
     user_ratings = Ratings.query.filter_by(juri_id=current_user.id).all()

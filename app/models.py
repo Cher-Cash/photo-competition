@@ -122,6 +122,9 @@ class Artworks(db.Model):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     nomination_id = Column(Integer, ForeignKey("nominations.id"), nullable=False)
 
+    author = db.relationship('Users', backref='artworks', foreign_keys=[user_id])
+    nomination = db.relationship('Nominations', backref='artworks', foreign_keys=[nomination_id])
+
 
 class Nominations(db.Model):
     __tablename__ = "nominations"
@@ -131,6 +134,7 @@ class Nominations(db.Model):
 
     winner_work_id = Column(Integer, ForeignKey("artworks.id"), nullable=True)
     competition_id = Column(Integer, ForeignKey("competitions.id"), nullable=False)
+    winner_work = db.relationship('Artworks', foreign_keys=[winner_work_id])
 
 
 class Competitions(db.Model):

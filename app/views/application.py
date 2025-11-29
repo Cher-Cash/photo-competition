@@ -20,7 +20,8 @@ def participate(competition_id):
         abort(403)
 
     # Проверяем существование конкурса
-    competition = Competitions.query.filter_by(id=competition_id, status="active").first()
+    competition = Competitions.query.filter_by(id=competition_id, status="active").filter(
+        Competitions.end_of_accepting > datetime.now().strftime("%Y-%m-%d %H:%M:%S")).first()
     if not competition:
         flash('Конкурс не найден или не активен', 'error')
         return redirect(url_for('index'))
@@ -105,7 +106,7 @@ def jury_voting():
     artworks = Artworks.query.options(
         joinedload(Artworks.author),
         joinedload(Artworks.nomination)
-    ).filter_by(status="active").all()
+    ).filter_by(status="active").filter(Competitions.summing_up > datetime.now().strftime("%Y-%m-%d %H:%M:%S")).all()
 
     # Получаем оценки текущего жюри
     user_ratings = Ratings.query.filter_by(juri_id=current_user.id).all()

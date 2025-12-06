@@ -18,8 +18,11 @@
                     <li><a href="/awards" class="{% if active_page == 'awards' %}active{% endif %}">Награды</a></li>
                     {% if current_user.is_authenticated %}
                     <li><a href="/profile" class="{% if active_page == 'profile' %}active{% endif %}">Профиль</a></li>
+                    {% if current_user.role_id == 3 %}
+                    <li><a href="{{ url_for('application.jury_voting') }}" class="nav-link">Оценка работ</a></li>
                     {% if current_user.role in ['admin', 'judge'] %}
                     <li><a href="/admin" class="{% if active_page == 'admin' %}active{% endif %}">Админка</a></li>
+                    {% endif %}
                     {% endif %}
                     {% endif %}
                 </ul>

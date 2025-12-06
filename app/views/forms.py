@@ -15,14 +15,14 @@ class LoginForm(FlaskForm):
 
 
 class SubmissionForm(FlaskForm):
-    photo = FileField('Фотография', validators=[
-        FileRequired(message='Пожалуйста, выберите файл'),
-        FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Только изображения (jpg, jpeg, png, gif)')
-    ])
     nomination_id = SelectField('Номинация',
         choices=[],
         validators=[DataRequired(message='Пожалуйста, выберите номинацию')]
     )
+    photo = FileField('Фотография', validators=[
+        FileRequired(message='Пожалуйста, выберите файл'),
+        FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Только изображения (jpg, jpeg, png, gif)')
+    ])
     description = TextAreaField('Название работы', validators=[
         DataRequired(message='Пожалуйста, напишите название работы'),
         Length(max=254, message='Название не должно превышать 254 символа')

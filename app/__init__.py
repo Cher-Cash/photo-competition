@@ -1,6 +1,7 @@
 import os
 import typing
 
+from datetime import datetime
 from dotenv import load_dotenv
 from flask_mail import Mail
 from flask import Flask, jsonify, render_template
@@ -56,7 +57,8 @@ def create_app(testing=False):  # noqa: FBT002
 
     @new_app.route("/index")
     def index():
-        return render_template('index.html')
+        competitions = Competitions.query.filter(Competitions.end_of_accepting>datetime.now().strftime("%Y-%m-%d %H:%M:%S")).all()
+        return render_template('index.html', competitions=competitions)
 
     from app.views.user import user_bp
     from app.views.application import application_bp

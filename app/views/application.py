@@ -3,36 +3,68 @@ from flask import Blueprint, redirect, url_for, flash, render_template, current_
 from flask_login import current_user
 from werkzeug.utils import secure_filename
 from sqlalchemy.orm import joinedload
+from datetime import datetime
 
 
 from app.extansions import db
-from app.models import Artworks, Nominations, Roles, Ratings, Artworks
+from app.models import Nominations, Roles, Ratings, Artworks, Competitions
 from app.views.forms import SubmissionForm
 
 application_bp = Blueprint("application", __name__)
 
 
-@application_bp.route("/participate", methods=["GET", "POST"])
-def participate():
+@application_bp.route("/participate/<int:competition_id>", methods=["GET", "POST"])
+def participate(competition_id):
     current_user_role = Roles.query.filter_by(id=current_user.role_id).first()
     if current_user_role.title != 'participant':
         abort(403)
 
+    # Проверяем существование конкурса
+    competition = Competitions.query.filter_by(id=competition_id, status="active").filter(
+        Competitions.end_of_accepting > datetime.now().strftime("%Y-%m-%d %H:%M:%S")).first()
+    if not competition:
+        flash('Конкурс не найден или не активен', 'error')
+        return redirect(url_for('index'))
+
     form = SubmissionForm()
 
-    nominations = Nominations.query.filter_by(status="active").all()
+    # Получаем номинации только для этого конкурса
+    nominations = Nominations.query.filter_by(
+        competition_id=competition_id,
+        status="active"
+    ).all()
+
     form.nomination_id.choices = [(str(n.id), n.title) for n in nominations]
 
     if not nominations:
-        flash('В настоящее время нет доступных номинаций для участия', 'warning')
+        flash('В выбранном конкурсе нет доступных номинаций', 'warning')
         return redirect(url_for('index'))
 
     if form.validate_on_submit():
-        nomination = Nominations.query.get(int(form.nomination_id.data))
+        nomination_id = int(form.nomination_id.data)
+
+        # Проверяем, существует ли выбранная номинация и принадлежит ли она конкурсу
+        nomination = Nominations.query.filter_by(
+            id=nomination_id,
+            competition_id=competition_id,
+            status="active"
+        ).first()
+
         if not nomination:
             flash('Выбранная номинация недоступна', 'error')
-            return render_template('participate.html', form=form)
+            return render_template('participate.html', form=form, competition=competition, nominations=nominations)
 
+        # Проверяем, не превысил ли пользователь лимит заявок для этой номинации
+        existing_submissions = Artworks.query.filter_by(
+            user_id=current_user.id,
+            nomination_id=nomination_id
+        ).count()
+
+        if existing_submissions >= 3:
+            flash('Вы уже подали максимальное количество работ (3) для этой номинации', 'error')
+            return render_template('participate.html', form=form, competition=competition, nominations=nominations)
+
+        # Сохраняем файл
         photo = form.photo.data
         filename = secure_filename(photo.filename)
         upload_folder = os.getenv('UPLOAD_FOLDER', 'artworks')
@@ -43,12 +75,15 @@ def participate():
         file_path = os.path.join(abs_upload_folder, filename)
 
         if not os.access(abs_upload_folder, os.W_OK):
-            return render_template('submit_work.html', form=form)
+            flash('Ошибка доступа к папке для загрузки', 'error')
+            return render_template('participate.html', form=form, competition=competition, nominations=nominations)
 
         photo.save(file_path)
+
+        # Создаем заявку
         submission = Artworks(
             user_id=current_user.id,
-            nomination_id=int(form.nomination_id.data),
+            nomination_id=nomination_id,
             file=str(file_path),
             file_name=form.description.data,
             status='for moderation'
@@ -59,7 +94,7 @@ def participate():
         flash('Ваша заявка успешно отправлена на модерацию!', 'success')
         return redirect(url_for('index'))
 
-    return render_template('participate.html', form=form, nominations=nominations)
+    return render_template('participate.html', form=form, competition=competition, nominations=nominations)
 
 @application_bp.route("/vote", methods=["GET", "POST"])
 def jury_voting():
@@ -71,7 +106,7 @@ def jury_voting():
     artworks = Artworks.query.options(
         joinedload(Artworks.author),
         joinedload(Artworks.nomination)
-    ).all()
+    ).filter_by(status="active").filter(Competitions.summing_up > datetime.now().strftime("%Y-%m-%d %H:%M:%S")).all()
 
     # Получаем оценки текущего жюри
     user_ratings = Ratings.query.filter_by(juri_id=current_user.id).all()

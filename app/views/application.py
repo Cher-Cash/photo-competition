@@ -81,7 +81,7 @@ def participate(competition_id):
             nomination_id=nomination_id,
             file=upload_res.get('signed_url'),
             s3_key=s3_key,
-            file_name=photo.filename,
+            file_name=form.description.data,
             status='for moderation'
         )
         db.session.add(submission)
@@ -111,6 +111,8 @@ def jury_voting():
     # Добавляем информацию о оценках пользователя к работам
     for artwork in artworks:
         artwork.user_rating = ratings_dict.get(artwork.id)
+        if artwork.file and not artwork.file.startswith('http'):
+            pass
 
     # Статистика
     total_artworks = len(artworks)

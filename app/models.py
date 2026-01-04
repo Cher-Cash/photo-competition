@@ -115,7 +115,8 @@ class Users(UserMixin, db.Model):
 class Artworks(db.Model):
     __tablename__ = "artworks"
     id = Column(Integer, primary_key=True)
-    file = Column(String(254))
+    file = Column(String(1024))
+    s3_key = Column(String(1024))
     file_name = Column(String(254))
     status = Column(String(20))
 

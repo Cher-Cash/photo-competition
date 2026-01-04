@@ -33,12 +33,20 @@
             {% for artwork in artworks %}
             <div class="artwork-card" id="artwork-{{ artwork.id }}">
                 <div class="artwork-image">
-                    <img src="{{ url_for('static', filename='artworks/' + artwork.file) }}" 
-                         alt="{{ artwork.file_name }}" 
-                         loading="lazy"
-                         onerror="this.src='/static/images/placeholder.jpg'">
+                    {% if artwork.file %}
+                        <!-- Используем прямую ссылку на S3 -->
+                        <img src="{{ artwork.file }}"
+                             alt="{{ artwork.file_name }}"
+                             loading="lazy"
+                             onerror="this.src='/static/images/placeholder.jpg'"
+                             class="artwork-img">
+                    {% else %}
+                        <img src="/static/images/placeholder.jpg"
+                             alt="Изображение недоступно"
+                             class="artwork-placeholder">
+                    {% endif %}
                 </div>
-                
+
                 <div class="artwork-info">
                     <h3 class="artwork-title">{{ artwork.file_name }}</h3>
                     <div class="artwork-meta">
@@ -145,6 +153,8 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     border: 1px solid #e1e5e9;
+    display: flex;
+    flex-direction: column;
 }
 
 .artwork-card:hover {
@@ -157,13 +167,15 @@
     height: 250px;
     overflow: hidden;
     background: #f8f9fa;
+    flex-shrink: 0;
 }
 
 .artwork-image img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     transition: transform 0.3s ease;
+    background: #f8f9fa;
 }
 
 .artwork-card:hover .artwork-image img {
@@ -172,6 +184,7 @@
 
 .artwork-info {
     padding: 1.5rem;
+    flex-grow: 1;
 }
 
 .artwork-title {
@@ -216,6 +229,7 @@
     padding: 1.5rem;
     background: #f8f9fa;
     border-top: 1px solid #e1e5e9;
+    flex-shrink: 0;
 }
 
 .current-rating {
@@ -310,6 +324,62 @@
     font-size: 1.1rem;
 }
 
+/* Стили для полноэкранного просмотра */
+.fullscreen-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+
+.fullscreen-img {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+}
+
+.close-fullscreen {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 10000;
+}
+
+.zoom-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+}
+
+.zoom-btn {
+    background: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
     .artworks-grid {
@@ -322,6 +392,10 @@
 
     .rating-scale {
         grid-template-columns: repeat(5, 1fr);
+    }
+
+    .artwork-image {
+        height: 200px;
     }
 }
 
@@ -342,6 +416,10 @@
 
     .stat-number {
         font-size: 2rem;
+    }
+
+    .artwork-image {
+        height: 180px;
     }
 }
 </style>
@@ -403,5 +481,59 @@ async function rateArtwork(artworkId, rating) {
         feedbackElement.innerHTML = '';
     }, 3000);
 }
+
+// Функция для полноэкранного просмотра изображения
+function openFullscreen(imgSrc) {
+    const overlay = document.createElement('div');
+    overlay.className = 'fullscreen-overlay';
+    overlay.innerHTML = `
+        <button class="close-fullscreen" onclick="closeFullscreen()">×</button>
+        <img src="${imgSrc}" class="fullscreen-img" id="fullscreen-img">
+        <div class="zoom-controls">
+            <button class="zoom-btn" onclick="zoomOut()">-</button>
+            <button class="zoom-btn" onclick="zoomIn()">+</button>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    overlay.style.display = 'flex';
+
+    // Блокируем прокрутку страницы
+    document.body.style.overflow = 'hidden';
+}
+
+function closeFullscreen() {
+    const overlay = document.querySelector('.fullscreen-overlay');
+    if (overlay) {
+        overlay.remove();
+    }
+    // Восстанавливаем прокрутку
+    document.body.style.overflow = '';
+}
+
+let currentZoom = 1;
+const zoomStep = 0.2;
+
+function zoomIn() {
+    const img = document.getElementById('fullscreen-img');
+    currentZoom += zoomStep;
+    img.style.transform = `scale(${currentZoom})`;
+}
+
+function zoomOut() {
+    const img = document.getElementById('fullscreen-img');
+    currentZoom = Math.max(0.5, currentZoom - zoomStep);
+    img.style.transform = `scale(${currentZoom})`;
+}
+
+// Добавляем обработчик для открытия полноэкранного просмотра
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.artwork-img').forEach(img => {
+        img.addEventListener('click', function() {
+            openFullscreen(this.src);
+        });
+        img.style.cursor = 'zoom-in';
+    });
+});
 </script>
 {% endblock %}

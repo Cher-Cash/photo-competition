@@ -1,3 +1,4 @@
+requests
 flask_sqlalchemy
 sqlalchemy~=2.0.42
 dotenv~=0.9.9
@@ -14,3 +15,5 @@ alembic~=1.16.4
 email_validator
 flask-mail
 pytz
+minio
+boto3

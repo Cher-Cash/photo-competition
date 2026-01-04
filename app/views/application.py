@@ -1,4 +1,5 @@
 import os
+import uuid
 from flask import Blueprint, redirect, url_for, flash, render_template, current_app, abort, request, jsonify
 from flask_login import current_user
 from werkzeug.utils import secure_filename
@@ -9,6 +10,7 @@ from datetime import datetime
 from app.extansions import db
 from app.models import Nominations, Roles, Ratings, Artworks, Competitions
 from app.views.forms import SubmissionForm
+from app.utils.minio_service import ArtworkStorage, generate_s3_key
 
 application_bp = Blueprint("application", __name__)
 
@@ -66,25 +68,19 @@ def participate(competition_id):
 
         # Сохраняем файл
         photo = form.photo.data
-        filename = secure_filename(photo.filename)
-        upload_folder = os.getenv('UPLOAD_FOLDER', 'artworks')
-        abs_upload_folder = os.path.join(current_app.root_path, upload_folder)
-        if not os.path.exists(abs_upload_folder):
-            os.makedirs(abs_upload_folder)
+        storage = ArtworkStorage()
+        file_bytes = photo.stream.read()
+        s3_key = generate_s3_key(competition_id, nomination_id, current_user.id, photo.filename)
+        upload_res = storage.upload_image(file_data=file_bytes, filename=s3_key, content_type=photo.mimetype)
+        print(upload_res)
 
-        file_path = os.path.join(abs_upload_folder, filename)
-
-        if not os.access(abs_upload_folder, os.W_OK):
-            flash('Ошибка доступа к папке для загрузки', 'error')
-            return render_template('participate.html', form=form, competition=competition, nominations=nominations)
-
-        photo.save(file_path)
 
         # Создаем заявку
         submission = Artworks(
             user_id=current_user.id,
             nomination_id=nomination_id,
-            file=str(file_path),
+            file=upload_res.get('signed_url'),
+            s3_key=s3_key,
             file_name=form.description.data,
             status='for moderation'
         )
@@ -115,6 +111,8 @@ def jury_voting():
     # Добавляем информацию о оценках пользователя к работам
     for artwork in artworks:
         artwork.user_rating = ratings_dict.get(artwork.id)
+        if artwork.file and not artwork.file.startswith('http'):
+            pass
 
     # Статистика
     total_artworks = len(artworks)

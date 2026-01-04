@@ -1,10 +1,11 @@
 import os
 import typing
+import uuid
 
 from datetime import datetime
 from dotenv import load_dotenv
 from flask_mail import Mail
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, request
 from flask_admin.contrib.sqla import ModelView
 from flask_cors import CORS
 

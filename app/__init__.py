@@ -94,8 +94,8 @@ class CompetitionsView(MyModelView):
 
 
 class RatingsView(MyModelView):
-    column_list = ["id", "rate", "work_id", "juri_id"]
-    form_columns: typing.ClassVar = ["rate", "work_id", "juri_id"]
+    column_list = ["id", "rate", "jury_comment", "work_id", "jury_id"]
+    form_columns: typing.ClassVar = ["rate", "work_id", "jury_id"]
 
 
 class RolesView(MyModelView):

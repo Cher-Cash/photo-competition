@@ -13,6 +13,15 @@ class LoginForm(FlaskForm):
     remember_me = BooleanField("Запомнить меня")
     submit = SubmitField("Войти")
 
+'''
+class JuryVoteForm(FlaskForm):
+    jury_comment = TextAreaField('Комментарий', validators=[
+        DataRequired(message='Введите комментарий'),
+        Length(max=254, message='Название не должно превышать 254 символа')
+    ])
+'''
+
+
 
 class SubmissionForm(FlaskForm):
     nomination_id = SelectField('Номинация',

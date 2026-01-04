@@ -154,5 +154,6 @@ class Ratings(db.Model):
     __tablename__ = "ratings"
     id = Column(Integer, primary_key=True)
     rate = Column(Integer)
+    jury_comment = Column(String(254))
     work_id = Column(Integer, ForeignKey("artworks.id"), nullable=False)
-    juri_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    jury_id = Column(Integer, ForeignKey("users.id"), nullable=False)

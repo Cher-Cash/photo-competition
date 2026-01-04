@@ -105,7 +105,7 @@ def jury_voting():
     ).filter_by(status="active").filter(Competitions.summing_up > datetime.now().strftime("%Y-%m-%d %H:%M:%S")).all()
 
     # Получаем оценки текущего жюри
-    user_ratings = Ratings.query.filter_by(juri_id=current_user.id).all()
+    user_ratings = Ratings.query.filter_by(jury_id=current_user.id).all()
     ratings_dict = {rating.work_id: rating for rating in user_ratings}
 
     # Добавляем информацию о оценках пользователя к работам
@@ -137,6 +137,7 @@ def rate_artwork():
     data = request.get_json()
     artwork_id = data.get('artwork_id')
     rating = data.get('rating')
+    jury_comment = data.get('jury_comment')
 
     if not artwork_id or not rating:
         return jsonify({'success': False, 'message': 'Неверные данные'}), 400
@@ -153,7 +154,7 @@ def rate_artwork():
     # Ищем существующую оценку
     existing_rating = Ratings.query.filter_by(
         work_id=artwork_id,
-        juri_id=current_user.id
+        jury_id=current_user.id
     ).first()
 
     if existing_rating:
@@ -164,12 +165,15 @@ def rate_artwork():
         # Создаем новую оценку
         new_rating = Ratings(
             work_id=artwork_id,
-            juri_id=current_user.id,
-            rate=rating
+            jury_id=current_user.id,
+            rate=rating,
+            jury_comment=jury_comment
         )
         db.session.add(new_rating)
         message = 'Оценка сохранена'
-
+    if jury_comment:
+        existing_rating.jury_comment = jury_comment
+        message = 'Комментарий обновлен'
     try:
         db.session.commit()
         return jsonify({'success': True, 'message': message})

@@ -30,6 +30,7 @@ class Users(UserMixin, db.Model):
     age = Column(Integer, nullable=False)
     about_user = Column(String(900))
     email = Column(String(254), nullable=False)
+    email_confirmed = db.Column(db.Boolean, default=False)
     password_hash = Column(db.String(256), nullable=False)
     status = Column(String(20), nullable=True)
     role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)

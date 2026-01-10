@@ -17,7 +17,7 @@
                     <li><a href="/rules" class="{% if active_page == 'rules' %}active{% endif %}">Правила</a></li>
                     <li><a href="/awards" class="{% if active_page == 'awards' %}active{% endif %}">Награды</a></li>
                     {% if current_user.is_authenticated %}
-                    <li><a href="/profile" class="{% if active_page == 'profile' %}active{% endif %}">Профиль</a></li>
+                    <li><a href="/user/profile" class="{% if active_page == 'profile' %}active{% endif %}">Профиль</a></li>
                     {% if current_user.role_id == 3 %}
                     <li><a href="{{ url_for('application.jury_voting') }}" class="nav-link">Оценка работ</a></li>
                     {% if current_user.role in ['admin', 'judge'] %}

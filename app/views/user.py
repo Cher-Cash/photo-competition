@@ -4,7 +4,7 @@ import sqlalchemy as sa
 
 from app.extansions import db
 from app.models import Users, Roles
-from app.views.forms import LoginForm, ForgotPasswordForm, RegistrationForm, ResetPasswordForm
+from app.views.forms import LoginForm, ForgotPasswordForm, RegistrationForm, ResetPasswordForm, EditProfileForm
 from app.utils.email import send_password_reset_email, send_verification_email
 
 user_bp = Blueprint("user", __name__)
@@ -87,6 +87,7 @@ def verify_email(token):
 
         # Меняем статус пользователя на "активный"
         user.status = 'active'
+        user.email_confirmed = True
         user.verification_token = None  # Удаляем использованный токен
         db.session.commit()
 
@@ -144,7 +145,7 @@ def authorization():
     form = LoginForm()
     if form.validate_on_submit():
         user = db.session.scalar(
-            sa.select(Users).where(Users.email == form.email.data))
+            sa.select(Users).where(form.email.data == Users.email))
 
         if user is None or not user.check_password(form.password.data):
             flash('Неверный email или пароль', 'danger')
@@ -254,3 +255,54 @@ def reset_password(token):
 
     # Возвращаем шаблон для GET запроса или невалидной формы
     return render_template('reset_password.html', form=form, token=token)
+
+
+@user_bp.route("/profile", methods=["GET"])
+def profile():
+    if not current_user.is_authenticated:
+        abort(403)
+    user = Users.query.filter_by(id=current_user.id).first()
+    role = Roles.query.filter_by(id=user.role_id).first()
+    return render_template('user_profile.html', user=user, role=role.display_name)
+
+
+@user_bp.route("/edit-profile", methods=["GET", "POST"])
+def edit_profile():
+    form = EditProfileForm()
+    if not current_user.is_authenticated:
+        abort(403)
+    if request.method == 'GET':
+        form.f_name.data = current_user.f_name
+        form.s_name.data = current_user.s_name
+        form.age.data = current_user.age
+        form.email.data = current_user.email
+
+    if form.validate_on_submit():
+        try:
+            email_changed = form.email.data != current_user.email
+
+            # Обновляем данные
+            current_user.f_name = form.f_name.data
+            current_user.s_name = form.s_name.data
+            current_user.age = form.age.data
+            current_user.about_user = request.form.get('about_user', '').strip()
+
+            if email_changed:
+                # Логика смены email с подтверждением
+                current_user.email = form.email.data
+                current_user.email_confirmed = False
+                current_user.generate_verification_token()
+
+                send_verification_email(current_user.email, current_user.f_name, current_user.verification_token)
+                flash('Email изменен. На новый адрес отправлено письмо для подтверждения.', 'warning')
+            else:
+                flash('Профиль успешно обновлен!', 'success')
+
+            db.session.commit()
+            return redirect(url_for('user.profile'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Ошибка при сохранении: {str(e)}', 'error')
+
+    return render_template('edit_profile.html', form=form)

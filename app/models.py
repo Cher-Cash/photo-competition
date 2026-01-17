@@ -53,7 +53,6 @@ class Users(UserMixin, db.Model):
         import secrets
         token = secrets.token_urlsafe(32)
         current_time = datetime.now(pytz.UTC)
-
         if token_type == 'verification':
             self.verification_token = token
             self.verification_sent_at = current_time

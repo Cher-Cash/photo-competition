@@ -6,40 +6,128 @@
 <section class="auth-section">
     <div class="container auth-container">
         <div class="auth-form-wrapper">
-            <h1 class="auth-title">📧 Подтверждение Email</h1>
-            
-            <div class="alert alert-success">
-                <h3>Регистрация почти завершена!</h3>
-                <p>На адрес <strong>{{ email }}</strong> было отправлено письмо с ссылкой для подтверждения.</p>
-            </div>
 
-            <div class="info-box">
-                <h4>Что делать дальше?</h4>
-                <ol>
-                    <li>Проверьте вашу почту {{ email }}</li>
-                    <li>Найдите письмо от "Фотоконкурс"</li>
-                    <li>Нажмите на кнопку "Подтвердить Email" в письме</li>
-                    <li>После подтверждения вы сможете войти в систему</li>
-                </ol>
-            </div>
+            {% if current_user.status == 'pending' %}
+                <!-- Случай 1: Первая регистрация (status="pending") -->
+                <h1 class="auth-title">📧 Подтверждение Email</h1>
 
-            <div class="alert alert-warning">
-                <h4>⏰ Внимание!</h4>
-                <p>Ссылка в письме действительна <strong>60 минут</strong>.</p>
-                <p>Если вы не получили письмо или ссылка истекла:</p>
-                
-                <form method="POST" action="{{ url_for('user.resend_verification') }}" class="resend-form">
-                    <input type="hidden" name="email" value="{{ email }}">
-                    <button type="submit" class="btn btn-warning">
-                        🔄 Отправить письмо повторно
-                    </button>
-                </form>
-            </div>
+                <div class="alert alert-success">
+                    <h3>Регистрация почти завершена!</h3>
+                    <p>На адрес <strong>{{ email }}</strong> было отправлено письмо с ссылкой для подтверждения.</p>
+                </div>
 
-            <div class="auth-links">
-                <a href="{{ url_for('user.authorization') }}" class="btn btn-secondary">Войти в аккаунт</a>
-                <a href="{{ url_for('user.registration') }}" class="btn btn-outline">Зарегистрироваться</a>
-            </div>
+                <div class="info-box">
+                    <h4>Что делать дальше?</h4>
+                    <ol>
+                        <li>Проверьте вашу почту {{ email }}</li>
+                        <li>Найдите письмо от "Фотоконкурс"</li>
+                        <li>Нажмите на кнопку "Подтвердить Email" в письме</li>
+                        <li>После подтверждения вы сможете войти в систему</li>
+                    </ol>
+                </div>
+
+                <div class="alert alert-warning">
+                    <h4>⏰ Внимание!</h4>
+                    <p>Ссылка в письме действительна <strong>60 минут</strong>.</p>
+                    <p>Если вы не получили письмо или ссылка истекла:</p>
+
+                    <form method="POST" action="{{ url_for('user.resend_verification') }}" class="resend-form">
+                        <input type="hidden" name="email" value="{{ email }}">
+                        <button type="submit" class="btn btn-warning">
+                            🔄 Отправить письмо повторно
+                        </button>
+                    </form>
+                </div>
+
+                <div class="auth-links">
+                    <a href="{{ url_for('user.authorization') }}" class="btn btn-secondary">Войти в аккаунт</a>
+                    <a href="{{ url_for('user.registration') }}" class="btn btn-outline">Зарегистрироваться</a>
+                </div>
+
+            {% elif current_user.status == 'active' %}
+                <!-- Случай 2: Смена email в личном кабинете (status="active") -->
+                <h1 class="auth-title">📧 Подтверждение нового Email</h1>
+
+                <div class="alert alert-info">
+                    <h3>Смена email-адреса</h3>
+                    <p>Вы изменили ваш email на <strong>{{ email }}</strong>.</p>
+                    <p>На новый адрес было отправлено письмо с ссылкой для подтверждения.</p>
+                </div>
+
+                <div class="info-box">
+                    <h4>Как подтвердить новый email:</h4>
+                    <ol>
+                        <li>Проверьте вашу почту {{ email }}</li>
+                        <li>Найдите письмо от "Фотоконкурс" с темой "Подтверждение смены email"</li>
+                        <li>Нажмите на кнопку "Подтвердить новый Email" в письме</li>
+                        <li>После подтверждения новый email станет основным для вашего аккаунта</li>
+                    </ol>
+                </div>
+
+                <div class="alert alert-warning">
+                    <h4>⏰ Важная информация:</h4>
+                    <p>Ссылка в письме действительна <strong>60 минут</strong>.</p>
+                    <p><strong>До подтверждения нового email:</strong></p>
+                    <ul>
+                        <li>Вход в аккаунт возможен только по старому email</li>
+                        <li>Уведомления будут приходить на старый email</li>
+                        <li>После подтверждения все уведомления будут приходить на новый адрес</li>
+                    </ul>
+
+                    <form method="POST" action="{{ url_for('user.resend_verification') }}" class="resend-form">
+                        <input type="hidden" name="email" value="{{ email }}">
+                        <button type="submit" class="btn btn-warning">
+                            🔄 Отправить письмо повторно
+                        </button>
+                    </form>
+                </div>
+
+                <div class="alert alert-note">
+                    <h4>📝 Примечание:</h4>
+                    <p>Если вы не хотите менять email или совершили ошибку:</p>
+                    <p>Просто не подтверждайте новый адрес, и ваш текущий email останется без изменений.</p>
+                </div>
+
+                <div class="auth-links">
+                    <a href="{{ url_for('user.profile') }}" class="btn btn-secondary">Вернуться в профиль</a>
+                    <a href="{{ url_for('user.edit_profile') }}" class="btn btn-outline">Изменить данные профиля</a>
+                </div>
+
+            {% else %}
+                <!-- Резервный вариант на случай других статусов -->
+                <h1 class="auth-title">📧 Подтверждение Email</h1>
+
+                <div class="alert alert-info">
+                    <h3>Требуется подтверждение</h3>
+                    <p>На адрес <strong>{{ email }}</strong> было отправлено письмо с ссылкой для подтверждения.</p>
+                </div>
+
+                <div class="info-box">
+                    <h4>Инструкция по подтверждению:</h4>
+                    <ol>
+                        <li>Проверьте вашу почту {{ email }}</li>
+                        <li>Найдите письмо от "Фотоконкурс"</li>
+                        <li>Перейдите по ссылке в письме для подтверждения email</li>
+                    </ol>
+                </div>
+
+                <div class="alert alert-warning">
+                    <h4>⏰ Ссылка действительна 60 минут</h4>
+                    <p>Если вы не получили письмо или ссылка истекла:</p>
+
+                    <form method="POST" action="{{ url_for('user.resend_verification') }}" class="resend-form">
+                        <input type="hidden" name="email" value="{{ email }}">
+                        <button type="submit" class="btn btn-warning">
+                            🔄 Отправить письмо повторно
+                        </button>
+                    </form>
+                </div>
+
+                <div class="auth-links">
+                    <a href="{{ url_for('user.authorization') }}" class="btn btn-secondary">На страницу входа</a>
+                </div>
+            {% endif %}
+
         </div>
     </div>
 </section>
@@ -53,6 +141,12 @@
     margin: 20px 0;
 }
 
+.info-box h4 {
+    margin-top: 0;
+    color: #1e40af;
+    font-size: 1.1rem;
+}
+
 .info-box ol {
     margin: 10px 0;
     padding-left: 20px;
@@ -60,6 +154,7 @@
 
 .info-box li {
     margin-bottom: 8px;
+    line-height: 1.5;
 }
 
 .resend-form {
@@ -71,6 +166,86 @@
     gap: 10px;
     justify-content: center;
     margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    min-width: 140px;
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(135deg, #2980b9 0%, #1f6aa5 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.btn-outline {
+    background: white;
+    color: #3498db;
+    border: 2px solid #3498db;
+}
+
+.btn-outline:hover {
+    background: #f8f9fa;
+    transform: translateY(-1px);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+/* Стили для алертов */
+.alert {
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+    border: 1px solid transparent;
+}
+
+.alert h3, .alert h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.alert p {
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.alert ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.alert ul li {
+    margin-bottom: 5px;
 }
 
 .alert-success {
@@ -79,10 +254,43 @@
     color: #155724;
 }
 
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
 .alert-warning {
     background-color: #fff3cd;
     border-color: #ffeaa7;
     color: #856404;
+}
+
+.alert-note {
+    background-color: #f8f9fa;
+    border-color: #e9ecef;
+    color: #495057;
+    border-left: 4px solid #6c757d;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .auth-form-wrapper {
+        padding: 1.5rem;
+    }
+
+    .auth-links {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .resend-form .btn-warning {
+        width: 100%;
+    }
 }
 </style>
 {% endblock %}

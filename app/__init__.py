@@ -46,6 +46,9 @@ def create_app(testing=False):  # noqa: FBT002
     new_app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
     new_app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
     new_app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
+    new_app.config['SERVER_NAME'] = os.getenv('SERVER_NAME', 'localhost:5000')
+    new_app.config['APPLICATION_ROOT'] = os.getenv('APPLICATION_ROOT', '/')
+    new_app.config['PREFERRED_URL_SCHEME'] = os.getenv('PREFERRED_URL_SCHEME', 'http')
 
     mail.init_app(new_app)
 

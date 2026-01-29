@@ -1,3 +1,5 @@
+redis
+rq
 requests
 flask_sqlalchemy
 sqlalchemy~=2.0.42

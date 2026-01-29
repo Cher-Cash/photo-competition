@@ -1,13 +1,17 @@
-from flask import Blueprint, request, redirect, url_for, flash, render_template
+from flask import Blueprint, request, redirect, url_for, flash, render_template, abort
 from flask_login import current_user, login_user, logout_user
+from redis import Redis
+from rq import Queue
 import sqlalchemy as sa
 
 from app.extansions import db
 from app.models import Users, Roles
 from app.views.forms import LoginForm, ForgotPasswordForm, RegistrationForm, ResetPasswordForm, EditProfileForm
-from app.utils.email import send_password_reset_email, send_verification_email
+from app.tasks import send_verification_email, send_password_reset_email
+from app.utils.user_verification import active_user_required
 
 user_bp = Blueprint("user", __name__)
+q = Queue(connection=Redis())
 
 
 @user_bp.route("/registration", methods=["GET", "POST"])
@@ -45,7 +49,7 @@ def registration():
             db.session.add(new_user)
             db.session.commit()
 
-            send_verification_email(email, f_name, new_user.verification_token)
+            q.enqueue(send_verification_email, email, f_name, new_user.verification_token)
 
             flash('Регистрация прошла успешно! На вашу почту отправлено письмо с подтверждением.', 'success')
             return render_template('verification_pending.html', email=email)
@@ -80,7 +84,7 @@ def verify_email(token):
             user.generate_verification_token()
             db.session.commit()
 
-            send_verification_email(user.email, user.f_name, user.verification_token)
+            q.enqueue(send_verification_email, user.email, user.f_name, user.verification_token)
 
             flash('Ссылка подтверждения истекла. На вашу почту отправлена новая ссылка.', 'warning')
             return render_template('verification_pending.html', email=user.email)
@@ -126,7 +130,8 @@ def resend_verification():
         db.session.commit()
 
         # Отправляем письмо
-        send_verification_email(user.email, user.f_name, user.verification_token)
+        q.enqueue(send_verification_email, user.email, user.f_name, user.verification_token)
+
 
         flash('Новое письмо с подтверждением отправлено на ваш email', 'success')
         return render_template('verification_pending.html', email=user.email)
@@ -203,7 +208,7 @@ def forgot_password():
             reset_token = user.generate_token('password_reset')
             db.session.commit()
 
-            send_password_reset_email(user.email, reset_token)
+            q.enqueue(send_password_reset_email, user.email, reset_token)
 
         flash('Если пользователь с таким email существует, ссылка для восстановления пароля будет отправлена',
               'success')
@@ -258,6 +263,7 @@ def reset_password(token):
 
 
 @user_bp.route("/profile", methods=["GET"])
+@active_user_required
 def profile():
     if not current_user.is_authenticated:
         abort(403)
@@ -267,6 +273,7 @@ def profile():
 
 
 @user_bp.route("/edit-profile", methods=["GET", "POST"])
+@active_user_required
 def edit_profile():
     form = EditProfileForm()
     if not current_user.is_authenticated:
@@ -293,7 +300,7 @@ def edit_profile():
                 current_user.email_confirmed = False
                 current_user.generate_verification_token()
 
-                send_verification_email(current_user.email, current_user.f_name, current_user.verification_token)
+                q.enqueue(send_verification_email, current_user.email, current_user.f_name, current_user.verification_token)
                 flash('Email изменен. На новый адрес отправлено письмо для подтверждения.', 'warning')
             else:
                 flash('Профиль успешно обновлен!', 'success')

@@ -42,6 +42,10 @@ def active_user_required(f):
             # Перенаправляем на страницу входа
             return redirect(url_for('user.authorization'))
 
+        if not current_user.email_confirmed:
+            flash('Ваш аккаунт ожидает подтверждения email. Пожалуйста, завершите регистрацию.')
+
+
         return f(*args, **kwargs)
 
     return decorated_function

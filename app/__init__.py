@@ -46,6 +46,9 @@ def create_app(testing=False):  # noqa: FBT002
     new_app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
     new_app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
     new_app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
+    new_app.config['SERVER_NAME'] = os.getenv('SERVER_NAME', 'localhost:5000')
+    new_app.config['APPLICATION_ROOT'] = os.getenv('APPLICATION_ROOT', '/')
+    new_app.config['PREFERRED_URL_SCHEME'] = os.getenv('PREFERRED_URL_SCHEME', 'http')
 
     mail.init_app(new_app)
 
@@ -74,8 +77,8 @@ class MyModelView(ModelView):
 
 
 class UsersView(MyModelView):
-    column_list = ("id", "f_name", "s_name", "age", "about_user", "email", "role_id", "status", )
-    form_columns: typing.ClassVar = ["f_name", "s_name", "age", "about_user", "email", "role_id", "status"]
+    column_list = ("id", "f_name", "s_name", "age", "about_user", "email", "email_confirmed", "role_id", "status", )
+    form_columns: typing.ClassVar = ["f_name", "s_name", "age", "about_user", "email", "email_confirmed", "role_id", "status"]
 
 
 class ArtworksView(MyModelView):
@@ -94,8 +97,8 @@ class CompetitionsView(MyModelView):
 
 
 class RatingsView(MyModelView):
-    column_list = ["id", "rate", "work_id", "juri_id"]
-    form_columns: typing.ClassVar = ["rate", "work_id", "juri_id"]
+    column_list = ["id", "rate", "jury_comment", "work_id", "jury_id"]
+    form_columns: typing.ClassVar = ["rate", "work_id", "jury_id"]
 
 
 class RolesView(MyModelView):

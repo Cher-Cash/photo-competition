@@ -69,21 +69,61 @@
                         <div class="user-rating-display">
                             <span class="rating-label">Ваша оценка:</span>
                             <span class="rating-value">{{ artwork.user_rating.rate }}/10</span>
+                            {% if artwork.user_rating.jury_comment %}
+                            <div class="comment-display">
+                                <strong>Комментарий:</strong> {{ artwork.user_rating.jury_comment }}
+                            </div>
+                            {% endif %}
                         </div>
                         {% endif %}
                     </div>
 
-                    <div class="rating-buttons">
-                        <p class="rating-instruction">Выберите оценку:</p>
-                        <div class="rating-scale">
-                            {% for i in range(1, 11) %}
-                            <button class="rating-btn {% if artwork.user_rating and artwork.user_rating.rate == i %}active{% endif %}"
-                                    data-artwork-id="{{ artwork.id }}"
-                                    data-rating="{{ i }}"
-                                    onclick="rateArtwork({{ artwork.id }}, {{ i }})">
-                                {{ i }}
+                    <div class="rating-controls">
+                        <div class="rating-buttons">
+                            <p class="rating-instruction">Выберите оценку:</p>
+                            <div class="rating-scale">
+                                {% for i in range(1, 11) %}
+                                <button class="rating-btn {% if artwork.user_rating and artwork.user_rating.rate == i %}active{% endif %}"
+                                        data-artwork-id="{{ artwork.id }}"
+                                        data-rating="{{ i }}"
+                                        onclick="selectRating({{ artwork.id }}, {{ i }})">
+                                    {{ i }}
+                                </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="jury-comment-section">
+                            <label for="comment-{{ artwork.id }}">Комментарий (необязательно):</label>
+                            <textarea id="comment-{{ artwork.id }}"
+                                      name="jury_comment"
+                                      class="jury-comment-input"
+                                      placeholder="Введите комментарий к работе..."
+                                      maxlength="254"
+                                      rows="3">{{ artwork.user_rating.jury_comment if artwork.user_rating else '' }}</textarea>
+                            <div class="comment-controls">
+                                <div class="char-counter" id="counter-{{ artwork.id }}">0/254</div>
+                                <div class="selected-rating-display" id="selected-rating-{{ artwork.id }}">
+                                    {% if artwork.user_rating %}
+                                    Выбрано: {{ artwork.user_rating.rate }}/10
+                                    {% else %}
+                                    Оценка не выбрана
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="save-section">
+                            <button class="save-rating-btn"
+                                    onclick="saveRating({{ artwork.id }})"
+                                    id="save-btn-{{ artwork.id }}"
+                                    {% if not artwork.user_rating %}disabled{% endif %}>
+                                {% if artwork.user_rating %}
+                                Обновить оценку
+                                {% else %}
+                                Сохранить оценку
+                                {% endif %}
                             </button>
-                            {% endfor %}
                         </div>
                     </div>
 
@@ -237,9 +277,6 @@
 }
 
 .user-rating-display {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     background: white;
     padding: 0.8rem 1rem;
     border-radius: 8px;
@@ -249,12 +286,28 @@
 .rating-label {
     font-weight: 500;
     color: #2c3e50;
+    display: block;
+    margin-bottom: 0.5rem;
 }
 
 .rating-value {
     font-weight: bold;
     color: #3498db;
     font-size: 1.1rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.comment-display {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e1e5e9;
+    color: #5a6c7d;
+    font-size: 0.9rem;
+}
+
+.rating-controls {
+    margin-top: 1.5rem;
 }
 
 .rating-instruction {
@@ -268,6 +321,7 @@
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 0.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .rating-btn {
@@ -295,10 +349,98 @@
     border-color: #3498db;
 }
 
+.jury-comment-section {
+    margin-bottom: 1.5rem;
+}
+
+.jury-comment-section label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.jury-comment-input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.3s ease;
+    margin-bottom: 0.5rem;
+}
+
+.jury-comment-input:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.comment-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.char-counter {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+}
+
+.selected-rating-display {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #3498db;
+    background: rgba(52, 152, 219, 0.1);
+    padding: 0.3rem 0.8rem;
+    border-radius: 4px;
+}
+
+.save-section {
+    text-align: center;
+}
+
+.save-rating-btn {
+    padding: 0.8rem 2rem;
+    background: #2ecc71;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    width: 100%;
+    max-width: 300px;
+}
+
+.save-rating-btn:hover {
+    background: #27ae60;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+
+.save-rating-btn:disabled {
+    background: #95a5a6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.save-rating-btn:disabled:hover {
+    background: #95a5a6;
+    transform: none;
+}
+
 .rating-feedback {
     margin-top: 1rem;
     text-align: center;
     min-height: 20px;
+    font-size: 0.9rem;
 }
 
 .no-artworks {
@@ -397,6 +539,15 @@
     .artwork-image {
         height: 200px;
     }
+
+    .comment-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .save-rating-btn {
+        max-width: 100%;
+    }
 }
 
 @media (max-width: 480px) {
@@ -425,15 +576,65 @@
 </style>
 
 <script>
-async function rateArtwork(artworkId, rating) {
-    const feedbackElement = document.getElementById(`feedback-${artworkId}`);
+// Глобальная переменная для хранения выбранных оценок
+let selectedRatings = {};
+
+// Функция для выбора оценки
+function selectRating(artworkId, rating) {
+    // Обновляем активные кнопки
     const ratingButtons = document.querySelectorAll(`.rating-btn[data-artwork-id="${artworkId}"]`);
+    ratingButtons.forEach(btn => {
+        btn.classList.remove('active');
+        if (parseInt(btn.dataset.rating) === rating) {
+            btn.classList.add('active');
+        }
+    });
+
+    // Сохраняем выбранную оценку
+    if (!selectedRatings[artworkId]) {
+        selectedRatings[artworkId] = {};
+    }
+    selectedRatings[artworkId].rating = rating;
+
+    // Обновляем отображение выбранной оценки
+    const selectedRatingDisplay = document.getElementById(`selected-rating-${artworkId}`);
+    if (selectedRatingDisplay) {
+        selectedRatingDisplay.textContent = `Выбрано: ${rating}/10`;
+    }
+
+    // Активируем кнопку сохранения
+    const saveBtn = document.getElementById(`save-btn-${artworkId}`);
+    if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Сохранить оценку';
+    }
+}
+
+// Функция для сохранения оценки и комментария
+async function saveRating(artworkId) {
+    const feedbackElement = document.getElementById(`feedback-${artworkId}`);
+    const saveBtn = document.getElementById(`save-btn-${artworkId}`);
+    const commentField = document.getElementById(`comment-${artworkId}`);
+
+    // Проверяем, выбрана ли оценка
+    if (!selectedRatings[artworkId] || !selectedRatings[artworkId].rating) {
+        feedbackElement.innerHTML = '<div style="color: #e74c3c;">Сначала выберите оценку</div>';
+        setTimeout(() => {
+            feedbackElement.innerHTML = '';
+        }, 3000);
+        return;
+    }
+
+    const rating = selectedRatings[artworkId].rating;
+    const juryComment = commentField ? commentField.value.trim() : '';
 
     try {
         // Показываем индикатор загрузки
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Сохранение...';
         feedbackElement.innerHTML = '<div style="color: #3498db;">Сохраняем оценку...</div>';
 
-        // Отправляем запрос на сервер
+        // Отправляем запрос на сервер с оценкой и комментарием
         const response = await fetch('/jury/rate', {
             method: 'POST',
             headers: {
@@ -441,31 +642,35 @@ async function rateArtwork(artworkId, rating) {
             },
             body: JSON.stringify({
                 artwork_id: artworkId,
-                rating: rating
+                rating: rating,
+                jury_comment: juryComment
             })
         });
 
         const result = await response.json();
 
         if (result.success) {
-            // Обновляем UI
-            ratingButtons.forEach(btn => {
-                btn.classList.remove('active');
-                if (parseInt(btn.dataset.rating) === rating) {
-                    btn.classList.add('active');
-                }
-            });
+            feedbackElement.innerHTML = '<div style="color: #27ae60;">' + result.message + '</div>';
 
-            // Обновляем блок с текущей оценкой
+            // Обновляем блок с текущей оценкой и комментарием
             const currentRatingDiv = document.querySelector(`#artwork-${artworkId} .current-rating`);
+            let commentHtml = '';
+            if (juryComment) {
+                commentHtml = `<div class="comment-display">
+                    <strong>Комментарий:</strong> ${juryComment}
+                </div>`;
+            }
+
             currentRatingDiv.innerHTML = `
                 <div class="user-rating-display">
                     <span class="rating-label">Ваша оценка:</span>
                     <span class="rating-value">${rating}/10</span>
+                    ${commentHtml}
                 </div>
             `;
 
-            feedbackElement.innerHTML = '<div style="color: #27ae60;">' + result.message + '</div>';
+            // Обновляем текст кнопки
+            saveBtn.textContent = 'Обновить оценку';
 
         } else {
             feedbackElement.innerHTML = `<div style="color: #e74c3c;">Ошибка: ${result.message}</div>`;
@@ -474,12 +679,13 @@ async function rateArtwork(artworkId, rating) {
     } catch (error) {
         console.error('Ошибка:', error);
         feedbackElement.innerHTML = '<div style="color: #e74c3c;">Ошибка соединения</div>';
+    } finally {
+        // Восстанавливаем кнопку через 2 секунды
+        setTimeout(() => {
+            saveBtn.disabled = false;
+            feedbackElement.innerHTML = '';
+        }, 2000);
     }
-
-    // Скрываем сообщение через 3 секунды
-    setTimeout(() => {
-        feedbackElement.innerHTML = '';
-    }, 3000);
 }
 
 // Функция для полноэкранного просмотра изображения
@@ -526,13 +732,64 @@ function zoomOut() {
     img.style.transform = `scale(${currentZoom})`;
 }
 
-// Добавляем обработчик для открытия полноэкранного просмотра
+// Добавляем обработчики при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
+    // Счетчик символов для комментариев
+    document.querySelectorAll('.jury-comment-input').forEach(textarea => {
+        const artworkId = textarea.id.replace('comment-', '');
+        const counterId = `counter-${artworkId}`;
+        const counterElement = document.getElementById(counterId);
+
+        if (counterElement) {
+            // Инициализация счетчика
+            counterElement.textContent = `${textarea.value.length}/254`;
+
+            // Обновление счетчика при вводе
+            textarea.addEventListener('input', function() {
+                counterElement.textContent = `${this.value.length}/254`;
+            });
+        }
+    });
+
+    // Инициализируем выбранные оценки из существующих оценок
+    document.querySelectorAll('.rating-btn.active').forEach(btn => {
+        const artworkId = btn.dataset.artworkId;
+        const rating = parseInt(btn.dataset.rating);
+
+        if (!selectedRatings[artworkId]) {
+            selectedRatings[artworkId] = {};
+        }
+        selectedRatings[artworkId].rating = rating;
+
+        // Обновляем отображение выбранной оценки
+        const selectedRatingDisplay = document.getElementById(`selected-rating-${artworkId}`);
+        if (selectedRatingDisplay) {
+            selectedRatingDisplay.textContent = `Выбрано: ${rating}/10`;
+        }
+
+        // Активируем кнопку сохранения если есть оценка
+        const saveBtn = document.getElementById(`save-btn-${artworkId}`);
+        if (saveBtn) {
+            saveBtn.disabled = false;
+        }
+    });
+
+    // Обработчик для полноэкранного просмотра
     document.querySelectorAll('.artwork-img').forEach(img => {
         img.addEventListener('click', function() {
             openFullscreen(this.src);
         });
         img.style.cursor = 'zoom-in';
+    });
+
+    // Обработчик Enter для сохранения оценки (Ctrl+Enter)
+    document.querySelectorAll('.jury-comment-input').forEach(textarea => {
+        textarea.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                const artworkId = this.id.replace('comment-', '');
+                saveRating(artworkId);
+            }
+        });
     });
 });
 </script>

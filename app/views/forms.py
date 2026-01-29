@@ -1,7 +1,7 @@
 import re
 from flask_wtf import FlaskForm
-from wtforms import PasswordField, StringField, SubmitField, BooleanField, TextAreaField, SelectField, IntegerField
-from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, NumberRange
+from wtforms import PasswordField, StringField, SubmitField, BooleanField, TextAreaField, SelectField, IntegerField, EmailField
+from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, NumberRange, Optional
 from flask_wtf.file import FileField, FileAllowed, FileRequired
 
 from app.models import Roles
@@ -117,3 +117,72 @@ class ResetPasswordForm(FlaskForm):
         EqualTo('password', message='Пароли должны совпадать')
     ])
     submit = SubmitField('Изменить пароль')
+
+
+class EditProfileForm(FlaskForm):
+    """Форма редактирования профиля пользователя"""
+
+    f_name = StringField(
+        'Имя',
+        validators=[
+            DataRequired(message='Имя обязательно для заполнения'),
+            Length(min=2, max=50, message='Имя должно быть от 2 до 50 символов')
+        ],
+        render_kw={
+            'placeholder': 'Введите ваше имя',
+            'class': 'form-control'
+        }
+    )
+
+    s_name = StringField(
+        'Фамилия',
+        validators=[
+            DataRequired(message='Фамилия обязательна для заполнения'),
+            Length(min=2, max=50, message='Фамилия должна быть от 2 до 50 символов')
+        ],
+        render_kw={
+            'placeholder': 'Введите вашу фамилию',
+            'class': 'form-control'
+        }
+    )
+
+    age = IntegerField(
+        'Возраст',
+        validators=[
+            DataRequired(message='Возраст обязателен для заполнения'),
+            NumberRange(min=1, max=120, message='Возраст должен быть от 1 до 120 лет')
+        ],
+        render_kw={
+            'placeholder': 'Введите ваш возраст',
+            'class': 'form-control',
+            'min': '1',
+            'max': '120'
+        }
+    )
+
+    email = EmailField(
+        'Email',
+        validators=[
+            DataRequired(message='Email обязателен для заполнения'),
+            Email(message='Введите корректный email адрес'),
+            Length(max=120, message='Email не должен превышать 120 символов')
+        ],
+        render_kw={
+            'placeholder': 'Введите ваш email',
+            'class': 'form-control',
+            'type': 'email'
+        }
+    )
+
+    about_user = TextAreaField(
+        'О себе',
+        validators=[
+            Optional(),
+            Length(max=500, message='Описание не должно превышать 500 символов')
+        ],
+        render_kw={
+            'placeholder': 'Расскажите немного о себе, ваших увлечениях в фотографии...',
+            'class': 'form-control',
+            'rows': '4'
+        }
+    )

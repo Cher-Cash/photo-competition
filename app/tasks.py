@@ -1,5 +1,3 @@
-import smtplib
-import os
 import requests
 from flask import url_for, render_template
 from flask_mail import Message
@@ -56,20 +54,7 @@ def send_verification_email(user_email, user_name, verification_token):
             _external=True
         )
 
-        # Текстовая версия
-        text_body = f"""
-Здравствуйте, {user_name}!
 
-Для подтверждения вашего email адреса перейдите по ссылке:
-{verification_url}
-
-Ссылка действительна в течение 60 минут.
-
-Если вы не регистрировались на нашем сайте, проигнорируйте это письмо.
-
-С уважением,
-Команда Фотоконкурса
-"""
 
         # HTML версия через шаблон
         html_body = render_template(
@@ -79,7 +64,7 @@ def send_verification_email(user_email, user_name, verification_token):
         )
 
         # Отправляем письмо
-        return send_email(subject, user_email, text_body, html_body)
+        return send_email(subject, user_email, html_body=html_body)
 
 
 def send_password_reset_email(user_email, reset_token):
@@ -89,7 +74,7 @@ def send_password_reset_email(user_email, reset_token):
     with app.app_context():
         subject = "Восстановление пароля - Фотоконкурс"
 
-        reset_link = f"http://127.0.0.1:5000/user/reset-password/{reset_token}"
+        reset_link = f"http://localhost:5000/user/reset-password/{reset_token}"
 
         text_body = f"""
 Для восстановления пароля перейдите по ссылке:

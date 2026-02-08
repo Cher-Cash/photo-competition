@@ -12,6 +12,7 @@ from flask_cors import CORS
 
 from app.extansions import db, admin_ext, login_manager, migrate_ext
 from app.models import Users, Artworks, Nominations, Competitions, Ratings, Roles
+from app.utils.user_verification import active_user_required
 
 
 mail = Mail()
@@ -60,6 +61,7 @@ def create_app(testing=False):  # noqa: FBT002
         return jsonify({"status": "ok"})
 
     @new_app.route("/index")
+    @active_user_required
     def index():
         competitions = Competitions.query.filter(Competitions.end_of_accepting>datetime.now().strftime("%Y-%m-%d %H:%M:%S")).all()
         return render_template('index.html', competitions=competitions)

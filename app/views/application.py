@@ -1,8 +1,5 @@
-import os
-import uuid
 from flask import Blueprint, redirect, url_for, flash, render_template, current_app, abort, request, jsonify
 from flask_login import current_user
-from werkzeug.utils import secure_filename
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 
@@ -11,12 +8,16 @@ from app.extansions import db
 from app.models import Nominations, Roles, Ratings, Artworks, Competitions
 from app.views.forms import SubmissionForm
 from app.utils.minio_service import ArtworkStorage, generate_s3_key
+from app.utils.user_verification import active_user_required
 
 application_bp = Blueprint("application", __name__)
 
 
 @application_bp.route("/participate/<int:competition_id>", methods=["GET", "POST"])
+@active_user_required
 def participate(competition_id):
+    if not current_user.is_authenticated:
+        abort(403)
     current_user_role = Roles.query.filter_by(id=current_user.role_id).first()
     if current_user_role.title != 'participant':
         abort(403)
@@ -93,7 +94,10 @@ def participate(competition_id):
     return render_template('participate.html', form=form, competition=competition, nominations=nominations)
 
 @application_bp.route("/vote", methods=["GET", "POST"])
+@active_user_required
 def jury_voting():
+    if not current_user.is_authenticated:
+        abort(403)
     current_user_role = Roles.query.filter_by(id=current_user.role_id).first()
     if current_user_role.title != 'jury':
         abort(403)
@@ -129,7 +133,10 @@ def jury_voting():
 
 
 @application_bp.route("/jury/rate", methods=["GET", "POST"])
+@active_user_required
 def rate_artwork():
+    if not current_user.is_authenticated:
+        abort(403)
     current_user_role = Roles.query.filter_by(id=current_user.role_id).first()
     if current_user_role.title != 'jury':
         abort(403)

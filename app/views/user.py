@@ -1,4 +1,4 @@
-from flask import Blueprint, request, redirect, url_for, flash, render_template
+from flask import Blueprint, request, redirect, url_for, flash, render_template, abort
 from flask_login import current_user, login_user, logout_user
 from redis import Redis
 from rq import Queue
@@ -8,6 +8,8 @@ from app.extansions import db
 from app.models import Users, Roles
 from app.views.forms import LoginForm, ForgotPasswordForm, RegistrationForm, ResetPasswordForm, EditProfileForm
 from app.tasks import send_verification_email, send_password_reset_email
+from app.utils.user_verification import active_user_required
+from app.services.user_service import NewUser, UserService, UserExist, UserDbError
 
 user_bp = Blueprint("user", __name__)
 q = Queue(connection=Redis())
@@ -18,45 +20,30 @@ def registration():
     form = RegistrationForm()
 
     if form.validate_on_submit():
-        email = form.email.data
-        password = form.password.data
-        f_name = form.name.data
-        s_name = form.second_name.data
-        age = form.age.data
-        role_id = form.role_id.data
+        new_user = NewUser(
+        email = form.email.data,
+        password = form.password.data,
+        f_name = form.name.data,
+        s_name = form.second_name.data,
+        age = form.age.data,
+        role_id = form.role_id.data,
         about = form.about.data
-
-        existing_user = Users.query.filter_by(email=email).first()
-        if existing_user:
+        )
+        user_service = UserService(db)
+        try:
+            user = user_service.create_user(new_user)
+        except UserExist:
             flash('Пользователь с таким email уже зарегистрирован', 'danger')
             return redirect(url_for('user.registration'))
-
-        try:
-            hashed_password = Users.set_password(password)
-
-            new_user = Users(
-                email=email,
-                password_hash=hashed_password,
-                f_name=f_name,
-                s_name=s_name,
-                age=age,
-                role_id=role_id,
-                about_user=about,
-                status='pending'
-            )
-            new_user.generate_verification_token()
-            db.session.add(new_user)
-            db.session.commit()
-
-            q.enqueue(send_verification_email, email, f_name, new_user.verification_token)
-
-            flash('Регистрация прошла успешно! На вашу почту отправлено письмо с подтверждением.', 'success')
-            return render_template('verification_pending.html', email=email)
-
-        except Exception as e:
-            db.session.rollback()
+        except UserDbError:
             flash('Произошла ошибка при регистрации. Пожалуйста, попробуйте позже.', 'danger')
             return redirect(url_for('user.registration'))
+
+        q.enqueue(send_verification_email, user.email, user.f_name, user.verification_token)
+        flash('Регистрация прошла успешно! На вашу почту отправлено письмо с подтверждением.', 'success')
+        return render_template('verification_pending.html', email=user.email)
+
+
 
     if form.errors:
         for field, errors in form.errors.items():
@@ -130,6 +117,7 @@ def resend_verification():
 
         # Отправляем письмо
         q.enqueue(send_verification_email, user.email, user.f_name, user.verification_token)
+
 
         flash('Новое письмо с подтверждением отправлено на ваш email', 'success')
         return render_template('verification_pending.html', email=user.email)
@@ -261,6 +249,7 @@ def reset_password(token):
 
 
 @user_bp.route("/profile", methods=["GET"])
+@active_user_required
 def profile():
     if not current_user.is_authenticated:
         abort(403)
@@ -270,6 +259,7 @@ def profile():
 
 
 @user_bp.route("/edit-profile", methods=["GET", "POST"])
+@active_user_required
 def edit_profile():
     form = EditProfileForm()
     if not current_user.is_authenticated:
@@ -297,7 +287,6 @@ def edit_profile():
                 current_user.generate_verification_token()
 
                 q.enqueue(send_verification_email, current_user.email, current_user.f_name, current_user.verification_token)
-
                 flash('Email изменен. На новый адрес отправлено письмо для подтверждения.', 'warning')
             else:
                 flash('Профиль успешно обновлен!', 'success')

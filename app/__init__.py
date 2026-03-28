@@ -60,7 +60,7 @@ def create_app(testing=False):  # noqa: FBT002
     def init_route():
         return jsonify({"status": "ok"})
 
-    @new_app.route("/index")
+    @new_app.route("/")
     @active_user_required
     def index():
         competitions = Competitions.query.filter(Competitions.end_of_accepting>datetime.now().strftime("%Y-%m-%d %H:%M:%S")).all()

@@ -4,7 +4,7 @@ from sqlalchemy.orm import joinedload
 from datetime import datetime
 
 
-from app.extansions import db
+from app.extensions import db
 from app.models import Nominations, Roles, Ratings, Artworks, Competitions
 from app.views.forms import SubmissionForm
 from app.utils.minio_service import ArtworkStorage, generate_s3_key

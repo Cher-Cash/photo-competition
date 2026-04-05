@@ -10,7 +10,7 @@ from flask_admin.contrib.sqla import ModelView
 from flask_cors import CORS
 
 
-from app.extansions import db, admin_ext, login_manager, migrate_ext
+from app.extensions import db, admin_ext, login_manager, migrate_ext
 from app.models import Users, Artworks, Nominations, Competitions, Ratings, Roles
 from app.utils.user_verification import active_user_required
 

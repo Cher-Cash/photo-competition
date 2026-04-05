@@ -4,7 +4,7 @@ from redis import Redis
 from rq import Queue
 import sqlalchemy as sa
 
-from app.extansions import db
+from app.extensions import db
 from app.models import Users, Roles
 from app.views.forms import LoginForm, ForgotPasswordForm, RegistrationForm, ResetPasswordForm, EditProfileForm
 from app.tasks import send_verification_email, send_password_reset_email

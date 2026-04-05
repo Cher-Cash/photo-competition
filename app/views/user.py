@@ -10,7 +10,9 @@ from app.views.forms import LoginForm, ForgotPasswordForm, RegistrationForm, Res
 from app.tasks import send_verification_email, send_password_reset_email
 from app.utils.user_verification import active_user_required
 from app.services.user_service import NewUser, UserService, UserExist, UserDbError
+from logger_setup import setup_logger
 
+logger = setup_logger('user_routes')
 user_bp = Blueprint("user", __name__)
 q = Queue(connection=Redis())
 
@@ -86,7 +88,8 @@ def verify_email(token):
 
     except Exception as e:
         db.session.rollback()
-        flash('Произошла ошибка при подтверждении email', 'danger')
+        flash(f'Произошла ошибка при подтверждении email', 'danger')
+        logger.debug('Произошла ошибка при подтверждении email %s', e)
         return redirect(url_for('user.registration'))
 
 
@@ -125,6 +128,7 @@ def resend_verification():
     except Exception as e:
         db.session.rollback()
         flash('Ошибка при отправке письма', 'danger')
+        logger.debug('Ошибка при отправке письма %s', e)
         return redirect(url_for('user.registration'))
 
 
@@ -241,6 +245,7 @@ def reset_password(token):
         except Exception as e:
             db.session.rollback()
             flash('Ошибка при изменении пароля. Пожалуйста, попробуйте еще раз.', 'danger')
+            logger.debug("Ошибка при изменении пароля. %s", e)
             # Важно: возвращаем render_template даже при ошибке
             return render_template('reset_password.html', form=form, token=token)
 

@@ -1,11 +1,6 @@
-import requests
 from flask import url_for, render_template
 from flask_mail import Message
 from app import create_app, mail
-
-def count_words_at_url(url):
-    resp = requests.get(url)
-    return len(resp.text.split())
 
 
 def send_email(subject, recipients, text_body=None, html_body=None, sender=None):

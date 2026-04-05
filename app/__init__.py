@@ -1,14 +1,12 @@
 import os
 import typing
-import uuid
-
 from datetime import datetime
+
 from dotenv import load_dotenv
 from flask_mail import Mail
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template
 from flask_admin.contrib.sqla import ModelView
 from flask_cors import CORS
-
 
 from app.extensions import db, admin_ext, login_manager, migrate_ext
 from app.models import Users, Artworks, Nominations, Competitions, Ratings, Roles

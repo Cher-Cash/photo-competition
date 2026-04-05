@@ -17,8 +17,6 @@ def active_user_required(f):
 
         # Проверяем статус пользователя
         if hasattr(current_user, 'status') and current_user.status != 'active':
-            # Сохраняем email для возможного отображения сообщения
-            user_email = current_user.email if hasattr(current_user, 'email') else None
 
             # Разлогиниваем пользователя
             logout_user()

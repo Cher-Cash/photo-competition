@@ -1,14 +1,14 @@
-from flask import Blueprint, redirect, url_for, flash, render_template, current_app, abort, request, jsonify
-from flask_login import current_user
-from sqlalchemy.orm import joinedload
 from datetime import datetime
 
+from flask import Blueprint, redirect, url_for, flash, render_template, abort, request, jsonify
+from flask_login import current_user
+from sqlalchemy.orm import joinedload
 
 from app.extensions import db
 from app.models import Nominations, Roles, Ratings, Artworks, Competitions
-from app.views.forms import SubmissionForm
 from app.utils.minio_service import ArtworkStorage, generate_s3_key
 from app.utils.user_verification import active_user_required
+from app.views.forms import SubmissionForm
 
 application_bp = Blueprint("application", __name__)
 
@@ -186,4 +186,4 @@ def rate_artwork():
         return jsonify({'success': True, 'message': message})
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': 'Ошибка базы данных'}), 500
+        return jsonify({'success': False, 'message': f'Ошибка базы данных {e}'}), 500

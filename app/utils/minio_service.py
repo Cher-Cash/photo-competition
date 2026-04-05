@@ -1,10 +1,8 @@
 from app.utils.config import MinIOConfig
 import io
 
-# Импортируем наш модуль логирования
 from logger_setup import setup_logger
 
-# Создаем логгер для этого модуля
 logger = setup_logger('artwork_storage')
 
 
@@ -20,8 +18,6 @@ class ArtworkStorage:
     def _check_connection(self):
         """Проверяет подключение к MinIO"""
         try:
-            # Пробуем получить список бакетов
-            buckets = self.client.list_buckets()
             # Проверяем существует ли нужный бакет
             if not self.client.bucket_exists(self.bucket):
                 self.client.make_bucket(self.bucket)
